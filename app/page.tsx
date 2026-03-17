@@ -116,7 +116,7 @@ export default function LandingPage() {
           <div className="mx-auto mt-16 grid max-w-3xl grid-cols-3 gap-6 rounded-xl border border-border bg-card/50 p-6 backdrop-blur-sm">
             <div>
               <p className="font-display text-2xl font-bold text-primary md:text-3xl">
-                94.2%
+                85.2%
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 Model Accuracy
