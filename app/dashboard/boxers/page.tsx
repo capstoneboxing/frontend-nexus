@@ -43,7 +43,7 @@ export default function BoxersPage() {
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Browse fighter profiles, compare attributes, and analyze performance
-          data.
+          data. WHY
         </p>
       </div>
 
