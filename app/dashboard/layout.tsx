@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import { logout } from "@/lib/auth"
+import { LogOut } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -109,6 +111,21 @@ export default function DashboardLayout({
             )
           })}
         </nav>
+
+
+
+          <div className="p-3 border-t border-sidebar-border">
+  <button
+    onClick={logout}
+    className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+  >
+    <LogOut className="size-4" />
+    {!collapsed && <span>Logout</span>}
+  </button>
+</div>
+
+
+
 
         {/* Collapse toggle */}
         <div className="hidden border-t border-sidebar-border p-3 lg:block">

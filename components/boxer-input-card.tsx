@@ -30,7 +30,7 @@ interface BoxerInputCardProps {
 }
 
 const categoryIcons = {
-  anthropometric: Ruler,
+  physical: Ruler,
   performance: Zap,
   technical: Crosshair,
   tactical: Brain,
@@ -38,7 +38,7 @@ const categoryIcons = {
 }
 
 const categoryColors = {
-  anthropometric: "text-chart-1",
+  physical: "text-chart-1",
   performance: "text-chart-2",
   technical: "text-chart-4",
   tactical: "text-chart-5",
@@ -54,7 +54,7 @@ export function BoxerInputCard({
   onAttributeChange,
 }: BoxerInputCardProps) {
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>(
-    { anthropometric: true }
+    { physical: true }
   )
 
   const toggleCategory = (key: string) => {

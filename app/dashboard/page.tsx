@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import {
   Activity,
@@ -23,19 +24,77 @@ import {
 } from "recharts"
 import { StatsCard } from "@/components/stats-card"
 import { Button } from "@/components/ui/button"
-import {
-  mockBoxers,
-  recentPredictions,
-  weightDistributionData,
-} from "@/lib/mock-data"
+import { supabase } from "@/lib/supabaseClient"
+import { weightDistributionData } from "@/lib/mock-data"
+import type { Boxer, PredictionRecord } from "@/lib/mock-data"
 
-const confidenceData = [
-  { name: "High (>60%)", value: 35, color: "oklch(0.58 0.22 25)" },
-  { name: "Medium (50-60%)", value: 45, color: "oklch(0.78 0.15 80)" },
-  { name: "Low (<50%)", value: 20, color: "oklch(0.65 0 0)" },
-]
-
+// ============================================================
+// PAGE
+// ============================================================
 export default function DashboardPage() {
+  const [boxers, setBoxers] = useState<Boxer[]>([])
+  const [predictions, setPredictions] = useState<PredictionRecord[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // ----------------------------------------------------------
+  // Fetch both tables on mount
+  // ----------------------------------------------------------
+  useEffect(() => {
+    async function fetchData() {
+      const [boxersRes, predictionsRes] = await Promise.all([
+        supabase
+          .from("all_time_ranked_boxer")
+          .select("ranked_boxer_id, boxer_name, ranking_position")
+          .order("ranking_position", { ascending: true }),
+        supabase
+          .from("prediction_history")
+          .select("*")
+          .order("prediction_date", { ascending: false })
+          .limit(4),
+      ])
+
+      if (boxersRes.error) console.error("❌ Boxers error:", boxersRes.error)
+      else setBoxers(boxersRes.data as Boxer[])
+
+      if (predictionsRes.error) console.error("❌ Predictions error:", predictionsRes.error)
+      else setPredictions(predictionsRes.data as PredictionRecord[])
+
+      setLoading(false)
+    }
+    fetchData()
+  }, [])
+
+  // ----------------------------------------------------------
+  // Derived stats from real data
+  // ----------------------------------------------------------
+  const avgProbA =
+    predictions.length > 0
+      ? predictions.reduce((s, p) => s + p.probability_a, 0) / predictions.length
+      : 0
+
+  const confidenceData = [
+    {//to be adjust to match the calucaltions
+      name: "High (>50%)",
+      value: predictions.filter((p) => p.probability_a > 0.).length,
+      color: "oklch(0.58 0.22 25)",
+    },
+    {
+      name: "Medium (>50%)",
+      value: predictions.filter((p) => p.probability_b > 0.5).length,
+      color: "oklch(0.78 0.15 80)",
+    },
+    {
+      name: "Low (<50% each)",
+      value: predictions.filter(
+        (p) => p.probability_a <= 0.5 && p.probability_b <= 0.5
+      ).length,
+      color: "oklch(0.65 0 0)",
+    },
+  ]
+
+  // ----------------------------------------------------------
+  // RENDER
+  // ----------------------------------------------------------
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -59,46 +118,48 @@ export default function DashboardPage() {
       {/* Stats Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatsCard
-          title="Total Boxers"
-          value={mockBoxers.length}
+          title="Total Fighters"
+          value={loading ? "—" : boxers.length}
           subtitle="In database"
           icon={Users}
-          trend="+2 this month"
         />
         <StatsCard
           title="Predictions Made"
-          value={recentPredictions.length}
-          subtitle="Last 30 days"
+          value={loading ? "—" : predictions.length}
+          subtitle="Stored in history"
           icon={Target}
         />
         <StatsCard
           title="Model Accuracy"
-          value="94.2%"
-          subtitle="Based on historical data"
+          //to be adjusted 
+          value={loading ? "—" : `${(avgProbA * 100).toFixed(1)}%`}
+          subtitle="Based on Historical data"
           icon={Activity}
-          trend="+1.3% improvement"
         />
         <StatsCard
-          title="Avg Confidence"
-          value="56.9%"
-          subtitle="Across predictions"
+          title="AVG Confidence"
+          //to be adjusted to match
+          value={
+            loading
+              ? "—"
+              : predictions.filter((p) => p.probability_a >= 0.5).length
+          }
+          subtitle={`Across predictions`}
           icon={TrendingUp}
         />
       </div>
 
       {/* Charts Row */}
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Attribute Weight Distribution */}
+        {/* Attribute Weight Distribution — static, always shown */}
         <div className="rounded-xl border border-border bg-card p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-semibold text-foreground">
-                Attribute Weight Distribution
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Impact of each attribute on predictions
-              </p>
-            </div>
+          <div className="mb-4">
+            <h3 className="text-sm font-semibold text-foreground">
+              Attribute Weight Distribution
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Impact of each attribute on predictions
+            </p>
           </div>
           <div className="h-[420px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -128,7 +189,7 @@ export default function DashboardPage() {
                   formatter={(value: number) => [`${value}%`, "Weight"]}
                 />
                 <Bar dataKey="weight" radius={[0, 4, 4, 0]}>
-                  {weightDistributionData.map((entry, index) => (
+                  {weightDistributionData.map((_, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={
@@ -146,63 +207,79 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Prediction Confidence Distribution */}
+        {/* Prediction Confidence — from real data */}
         <div className="rounded-xl border border-border bg-card p-5">
           <div className="mb-4">
             <h3 className="text-sm font-semibold text-foreground">
               Prediction Confidence
             </h3>
             <p className="text-xs text-muted-foreground">
-              Distribution of confidence levels
+              Distribution across stored predictions
             </p>
           </div>
-          <div className="flex h-64 items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={confidenceData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={90}
-                  paddingAngle={4}
-                  dataKey="value"
-                  stroke="none"
-                >
-                  {confidenceData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <RechartsTooltip
-                  contentStyle={{
-                    backgroundColor: "oklch(0.17 0.005 250)",
-                    border: "1px solid oklch(0.28 0.005 250)",
-                    borderRadius: "8px",
-                    color: "oklch(0.95 0 0)",
-                    fontSize: "12px",
-                  }}
-                  formatter={(value: number) => [`${value}%`, "Percentage"]}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-2 flex justify-center gap-6">
-            {confidenceData.map((item) => (
-              <div key={item.name} className="flex items-center gap-2">
-                <div
-                  className="size-2.5 rounded-full"
-                  style={{ backgroundColor: item.color }}
-                />
-                <span className="text-xs text-muted-foreground">
-                  {item.name}
-                </span>
+
+          {loading ? (
+            <div className="flex h-64 items-center justify-center">
+              <p className="text-sm text-muted-foreground">Loading...</p>
+            </div>
+          ) : predictions.length === 0 ? (
+            <div className="flex h-64 flex-col items-center justify-center gap-2">
+              <p className="text-sm text-muted-foreground">No predictions yet.</p>
+              <Link href="/dashboard/predict">
+                <Button size="sm" variant="outline">Make your first prediction</Button>
+              </Link>
+            </div>
+          ) : (
+            <>
+              <div className="flex h-64 items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={confidenceData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={90}
+                      paddingAngle={4}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {confidenceData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip
+                      contentStyle={{
+                        backgroundColor: "oklch(0.17 0.005 250)",
+                        border: "1px solid oklch(0.28 0.005 250)",
+                        borderRadius: "8px",
+                        color: "oklch(0.95 0 0)",
+                        fontSize: "12px",
+                      }}
+                      formatter={(value: number) => [value, "Predictions"]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
-            ))}
-          </div>
+              <div className="mt-2 flex justify-center gap-4">
+                {confidenceData.map((item) => (
+                  <div key={item.name} className="flex items-center gap-2">
+                    <div
+                      className="size-2.5 rounded-full"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      {item.name} ({item.value})
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Recent Predictions */}
+      {/* Recent Predictions — from real data */}
       <div className="rounded-xl border border-border bg-card">
         <div className="flex items-center justify-between border-b border-border p-5">
           <div>
@@ -213,7 +290,7 @@ export default function DashboardPage() {
               Latest match outcome predictions
             </p>
           </div>
-          <Link href="/dashboard/predict">
+          <Link href="/dashboard/history">
             <Button
               variant="ghost"
               size="sm"
@@ -224,38 +301,56 @@ export default function DashboardPage() {
             </Button>
           </Link>
         </div>
-        <div className="divide-y divide-border">
-          {recentPredictions.map((prediction) => (
-            <div
-              key={prediction.id}
-              className="flex items-center justify-between px-5 py-3.5"
-            >
-              <div className="flex items-center gap-4">
-                <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
-                  <Swords className="size-3.5 text-primary" />
+
+        {loading ? (
+          <div className="flex items-center justify-center py-10">
+            <p className="text-sm text-muted-foreground">Loading predictions...</p>
+          </div>
+        ) : predictions.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 gap-2">
+            <p className="text-sm text-muted-foreground">No predictions yet.</p>
+            <Link href="/dashboard/predict">
+              <Button size="sm" variant="outline">Make your first prediction</Button>
+            </Link>
+          </div>
+        ) : (
+          <div className="divide-y divide-border">
+            {predictions.map((pred) => (
+              <div
+                key={pred.prediction_id}
+                className="flex items-center justify-between px-5 py-3.5"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
+                    <Swords className="size-3.5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">
+                      {pred.boxer_a_name}{" "}
+                      <span className="text-muted-foreground">vs</span>{" "}
+                      {pred.boxer_b_name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(pred.prediction_date).toLocaleDateString()}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-foreground">
-                    {prediction.boxerA}{" "}
-                    <span className="text-muted-foreground">vs</span>{" "}
-                    {prediction.boxerB}
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-accent">
+                    {pred.match_decision}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {prediction.date}
+
+                    {/* to be adjust to get corect model confidence number */}
+
+                    {(pred.probability_a * 100).toFixed(0)}% /{" "}
+                    {(pred.probability_b * 100).toFixed(0)}%
                   </p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm font-semibold text-accent">
-                  {prediction.winner}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {prediction.confidence}% confidence
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Quick Actions */}
@@ -268,11 +363,9 @@ export default function DashboardPage() {
             <Swords className="size-5 text-primary" />
           </div>
           <div>
-            <h4 className="text-sm font-semibold text-foreground">
-              Predict Match
-            </h4>
+            <h4 className="text-sm font-semibold text-foreground">Predict Match</h4>
             <p className="text-xs text-muted-foreground">
-              Input fighter data and generate predictions
+              Pick two fighters and generate a prediction
             </p>
           </div>
           <ChevronRight className="ml-auto size-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
@@ -285,28 +378,24 @@ export default function DashboardPage() {
             <Database className="size-5 text-accent" />
           </div>
           <div>
-            <h4 className="text-sm font-semibold text-foreground">
-              Boxer Database
-            </h4>
+            <h4 className="text-sm font-semibold text-foreground">Boxer Database</h4>
             <p className="text-xs text-muted-foreground">
-              Browse and search fighter profiles
+              Browse all {loading ? "..." : boxers.length} ranked fighters
             </p>
           </div>
           <ChevronRight className="ml-auto size-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
         </Link>
         <Link
-          href="/dashboard/model"
+          href="/dashboard/history"
           className="group flex items-center gap-4 rounded-xl border border-border bg-card p-5 transition-colors hover:border-primary/30"
         >
           <div className="rounded-lg bg-primary/10 p-2.5">
             <Activity className="size-5 text-primary" />
           </div>
           <div>
-            <h4 className="text-sm font-semibold text-foreground">
-              Model Info
-            </h4>
+            <h4 className="text-sm font-semibold text-foreground">Prediction History</h4>
             <p className="text-xs text-muted-foreground">
-              Learn about the prediction methodology
+              Review all {loading ? "..." : predictions.length} stored predictions
             </p>
           </div>
           <ChevronRight className="ml-auto size-4 text-muted-foreground transition-transform group-hover:translate-x-1" />

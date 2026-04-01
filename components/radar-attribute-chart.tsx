@@ -9,32 +9,32 @@ import {
   Tooltip as RechartsTooltip,
 } from "recharts"
 import type { BoxerAttributes } from "@/lib/mock-data"
-import { attributeLabels, perfectBoxer } from "@/lib/mock-data"
+import { attributeLabels } from "@/lib/mock-data"
 
 interface RadarAttributeChartProps {
   attributes: BoxerAttributes
   showPerfect?: boolean
+  perfectAttributes?: BoxerAttributes // ← now passed in, not imported
 }
 
 export function RadarAttributeChart({
   attributes,
   showPerfect = false,
+  perfectAttributes,
 }: RadarAttributeChartProps) {
-  const data = (
-    Object.keys(attributeLabels) as (keyof BoxerAttributes)[]
-  ).map((key) => ({
-    attribute: attributeLabels[key],
-    value: attributes[key],
-    perfect: perfectBoxer[key],
-  }))
+  const data = (Object.keys(attributeLabels) as (keyof BoxerAttributes)[]).map(
+    (key) => ({
+      attribute: attributeLabels[key],
+      value: attributes[key],
+      // Use passed-in perfect data, or fall back to 10 for every attribute
+      perfect: perfectAttributes ? perfectAttributes[key] : 10,
+    })
+  )
 
   return (
     <ResponsiveContainer width="100%" height="100%">
       <RadarChart data={data} cx="50%" cy="50%" outerRadius="70%">
-        <PolarGrid
-          stroke="oklch(0.28 0.005 250)"
-          strokeDasharray="3 3"
-        />
+        <PolarGrid stroke="oklch(0.28 0.005 250)" strokeDasharray="3 3" />
         <PolarAngleAxis
           dataKey="attribute"
           tick={{ fill: "oklch(0.65 0 0)", fontSize: 9 }}
