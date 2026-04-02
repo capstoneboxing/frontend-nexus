@@ -1,12 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2, Lock, User, Swords } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-
-const API_BASE = "http://backend-nexus-capstone.up.railway.app"
+import { isLoggedIn, saveAuth, login } from "@/lib/auth"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -15,62 +14,54 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
-  // ----------------------------------------------------------
-  // Submit — POST /api/v1/auth/login
-  // ----------------------------------------------------------
+  // Already logged in → go straight to dashboard
+  useEffect(() => {
+    if (isLoggedIn()) router.replace("/dashboard")
+  }, [router])
+
   const handleLogin = async () => {
     setError("")
-
     if (!username.trim() || !password.trim()) {
       setError("Please enter your username and password.")
       return
     }
 
     setLoading(true)
-
     try {
-      const res = await fetch(`${API_BASE}/api/v1/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      })
+      // Goes through /api/proxy/api/v1/auth/login — no CORS issue
+      const res = await login(username.trim(), password)
 
       if (!res.ok) {
         const data = await res.json().catch(() => null)
-        setError(data?.message || "Invalid username or password.")
-        setLoading(false)
+        setError(
+          res.status === 401
+            ? "Invalid username or password."
+            : data?.message || "Login failed. Please try again."
+        )
         return
       }
 
+      // { token, tokenType, username }
       const data = await res.json()
-
-      // Store the JWT token so other pages can use it
-      localStorage.setItem("nexus_token", data.token)
-      localStorage.setItem("nexus_user", JSON.stringify({ username: data.username ?? username }))
-
-      // Redirect to dashboard
-      router.push("/dashboard")
+      saveAuth(data.token, data.username ?? username)
+      router.replace("/dashboard")
     } catch (err) {
       console.error("Login error:", err)
-      setError("Could not connect to the server. Please try again.")
+      setError("Could not reach the server. Please try again.")
     } finally {
       setLoading(false)
     }
   }
 
-  // Allow pressing Enter to submit
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") handleLogin()
   }
 
-  // ----------------------------------------------------------
-  // RENDER
-  // ----------------------------------------------------------
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm space-y-8">
 
-        {/* Logo / Branding */}
+        {/* Branding */}
         <div className="text-center">
           <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-primary/10">
             <Swords className="size-7 text-primary" />
@@ -83,12 +74,11 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Card */}
+        {/* Form card */}
         <div className="rounded-2xl border border-border bg-card p-6 shadow-lg space-y-5">
 
-          {/* Username */}
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Username
             </label>
             <div className="relative">
@@ -98,17 +88,17 @@ export default function LoginPage() {
                 placeholder="Enter your username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                onKeyDown={handleKeyDown}
+                onKeyDown={onKeyDown}
                 className="border-border bg-secondary pl-9 text-foreground placeholder:text-muted-foreground"
                 autoComplete="username"
                 autoFocus
+                disabled={loading}
               />
             </div>
           </div>
 
-          {/* Password */}
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Password
             </label>
             <div className="relative">
@@ -118,34 +108,29 @@ export default function LoginPage() {
                 placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={handleKeyDown}
+                onKeyDown={onKeyDown}
                 className="border-border bg-secondary pl-9 text-foreground placeholder:text-muted-foreground"
                 autoComplete="current-password"
+                disabled={loading}
               />
             </div>
           </div>
 
-          {/* Error message */}
           {error && (
             <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3">
               <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
 
-          {/* Submit */}
           <Button
             onClick={handleLogin}
             disabled={loading}
             className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 size-4 animate-spin" />
-                Signing in...
-              </>
-            ) : (
-              "Sign In"
-            )}
+            {loading
+              ? <><Loader2 className="mr-2 size-4 animate-spin" />Signing in...</>
+              : "Sign In"
+            }
           </Button>
         </div>
 
