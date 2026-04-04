@@ -27,11 +27,11 @@ export function getUser(): { username: string; adminId?: number } | null {
 
 export function isLoggedIn(): boolean { return !!getToken() }
 
-export function logout() {
-  localStorage.removeItem(TOKEN_KEY)
-  localStorage.removeItem(USER_KEY)
-  window.location.href = "/login"
-}
+// export function login() {
+//   localStorage.removeItem(TOKEN_KEY)
+//   localStorage.removeItem(USER_KEY)
+//   window.location.href = "/login"
+// }
 
 export function saveAuth(token: string, username: string, adminId?: number) {
   localStorage.setItem(TOKEN_KEY, token)

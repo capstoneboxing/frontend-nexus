@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { logout } from "@/lib/auth"
-import { LogOut } from "lucide-react"
+// import { login } from "@/lib/auth"
+import { LogIn } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -115,13 +115,22 @@ export default function DashboardLayout({
 
 
           <div className="p-3 border-t border-sidebar-border">
-  <button
-    onClick={logout}
+           
+           
+           
+            <a href="/login">
+            
+             <button
+     
     className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+    
   >
-    <LogOut className="size-4" />
-    {!collapsed && <span>Logout</span>}
+    <LogIn className="size-4" />
+    {!collapsed && <span>Login</span>  }
+    
   </button>
+            </a>
+ 
 </div>
 
 
