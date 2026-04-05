@@ -1,127 +1,302 @@
 "use client"
 
-import { useState } from "react"
-import { Loader2, Swords } from "lucide-react"
+import React, { useEffect, useState } from "react"
+import { Loader2, Search, Swords } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BoxerInputCard } from "@/components/boxer-input-card"
 import { PredictionResults } from "@/components/prediction-results"
 import {
-  type BoxerAttributes,
-  type PredictionResult,
-  generatePrediction,
-} from "@/lib/mock-data"
-
-const defaultAttributes: BoxerAttributes = {
-  height: 5, reach: 5, bodyFat: 5, shoulderToWaistRatio: 5,
-  handSpeed: 5, punchOutput: 5, vo2Max: 5, lactateThreshold: 5, knockoutForce: 5, reactTime: 5,
-  punchAccuracy: 5, defensiveSlipRate: 5, opponentConnectPct: 5, footworkEfficiency: 5,
-  adaptationSpeed: 5, counterSuccessRate: 5, ringIQ: 5,
-  mentalResilience: 5, composure: 5, emotionalRegulation: 5,
-}
+  allTimeRankedBoxersApi,
+  matchPredictionApi,
+  weightClassesApi,
+} from "@/lib/api-client"
+import {
+  mapGeneratedProfileToAttributes,
+  mapAttributesToBoxerInput,
+  mapPredictionResponseToUI,
+  type PredictionUIResult,
+} from "@/lib/mappers"
+import { defaultAttributes, type BoxerAttributes } from "@/lib/predict-types"
+import type {
+  GenerateBoxerProfileRequest,
+  GeneratedBoxerProfileResponse,
+  PredictMatchRequest,
+  WeightClassResponse,
+} from "@/generated-api/models"
 
 export default function PredictPage() {
+  const [weightClasses, setWeightClasses] = useState<WeightClassResponse[]>([])
+  const [selectedWeightClassId, setSelectedWeightClassId] = useState<number | "">("")
+
   const [boxerAName, setBoxerAName] = useState("")
   const [boxerBName, setBoxerBName] = useState("")
-  const [boxerAAttrs, setBoxerAAttrs] = useState<BoxerAttributes>({
-    ...defaultAttributes,
-  })
-  const [boxerBAttrs, setBoxerBAttrs] = useState<BoxerAttributes>({
-    ...defaultAttributes,
-  })
-  const [result, setResult] = useState<PredictionResult | null>(null)
-  const [loading, setLoading] = useState(false)
+
+  const [boxerAAttrs, setBoxerAAttrs] = useState<BoxerAttributes>({ ...defaultAttributes })
+  const [boxerBAttrs, setBoxerBAttrs] = useState<BoxerAttributes>({ ...defaultAttributes })
+
+  const [boxerAProfile, setBoxerAProfile] = useState<GeneratedBoxerProfileResponse | null>(null)
+  const [boxerBProfile, setBoxerBProfile] = useState<GeneratedBoxerProfileResponse | null>(null)
+
+  const [loadingWeightClasses, setLoadingWeightClasses] = useState(true)
+  const [loadingBoxerA, setLoadingBoxerA] = useState(false)
+  const [loadingBoxerB, setLoadingBoxerB] = useState(false)
+  const [loadingPrediction, setLoadingPrediction] = useState(false)
+
+  const [result, setResult] = useState<PredictionUIResult | null>(null)
   const [error, setError] = useState("")
 
-  const handlePredict = async () => {
+  useEffect(() => {
+    async function loadWeightClasses() {
+      try {
+        const data = await weightClassesApi.getWeightClasses()
+        setWeightClasses(data)
+      } catch (err) {
+        console.error(err)
+        setError("Failed to load weight classes.")
+      } finally {
+        setLoadingWeightClasses(false)
+      }
+    }
+
+    void loadWeightClasses()
+  }, [])
+
+  async function handleGenerateProfile(
+      boxerName: string,
+      setAttrs: React.Dispatch<React.SetStateAction<BoxerAttributes>>,
+      setProfile: React.Dispatch<React.SetStateAction<GeneratedBoxerProfileResponse | null>>,
+      setLoading: React.Dispatch<React.SetStateAction<boolean>>
+  ) {
+    if (!boxerName.trim()) {
+      setError("Please enter a boxer name first.")
+      return
+    }
+
+    if (selectedWeightClassId === "") {
+      setError("Please select a weight class first.")
+      return
+    }
+
+    setError("")
+    setLoading(true)
+
+    try {
+      const payload: GenerateBoxerProfileRequest = {
+        boxerName: boxerName.trim(),
+        weightClassId: selectedWeightClassId,
+      }
+
+      const response = await allTimeRankedBoxersApi.generateProfile({
+        generateBoxerProfileRequest: payload,
+      })
+
+      setProfile(response)
+
+      if (!response.boxerFound) {
+        setError(response.matchReason || `Could not confidently identify ${boxerName}.`)
+        return
+      }
+
+      setAttrs(mapGeneratedProfileToAttributes(response))
+    } catch (err) {
+      console.error(err)
+      setError(`Failed to generate profile for ${boxerName}.`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handlePredict() {
     if (!boxerAName.trim() || !boxerBName.trim()) {
       setError("Please enter names for both fighters.")
       return
     }
+
+    if (selectedWeightClassId === "") {
+      setError("Please select a weight class.")
+      return
+    }
+
     setError("")
-    setLoading(true)
+    setLoadingPrediction(true)
     setResult(null)
 
-    // Simulate processing delay
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    try {
+      const payload: PredictMatchRequest = {
+        weightClassId: selectedWeightClassId,
+        boxerA: mapAttributesToBoxerInput(boxerAName.trim(), boxerAAttrs),
+        boxerB: mapAttributesToBoxerInput(boxerBName.trim(), boxerBAttrs),
+      }
 
-    const prediction = generatePrediction(
-      boxerAName,
-      boxerAAttrs,
-      boxerBName,
-      boxerBAttrs
-    )
-    setResult(prediction)
-    setLoading(false)
+      const response = await matchPredictionApi.predict({
+        predictMatchRequest: payload,
+      })
+
+      setResult(mapPredictionResponseToUI(response))
+    } catch (err) {
+      console.error(err)
+      setError("Failed to calculate prediction.")
+    } finally {
+      setLoadingPrediction(false)
+    }
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="font-display text-2xl font-bold text-foreground">
-          Match Prediction
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Input fighter attributes and generate an AI-powered outcome
-          prediction.
-        </p>
-      </div>
-
-      {/* Boxer Input Panels */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <BoxerInputCard
-          label="Fighter A (Red Corner)"
-          color="red"
-          name={boxerAName}
-          onNameChange={setBoxerAName}
-          attributes={boxerAAttrs}
-          onAttributeChange={(key, value) =>
-            setBoxerAAttrs((prev) => ({ ...prev, [key]: value }))
-          }
-        />
-        <BoxerInputCard
-          label="Fighter B (Blue Corner)"
-          color="blue"
-          name={boxerBName}
-          onNameChange={setBoxerBName}
-          attributes={boxerBAttrs}
-          onAttributeChange={(key, value) =>
-            setBoxerBAttrs((prev) => ({ ...prev, [key]: value }))
-          }
-        />
-      </div>
-
-      {/* Error message */}
-      {error && (
-        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3">
-          <p className="text-sm text-destructive-foreground">{error}</p>
+      <div className="space-y-6">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-foreground">
+            Match Prediction
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Select one weight class, generate both boxer profiles, then calculate the prediction.
+          </p>
         </div>
-      )}
 
-      {/* Generate Button */}
-      <div className="flex justify-center">
-        <Button
-          size="lg"
-          onClick={handlePredict}
-          disabled={loading}
-          className="bg-primary px-10 text-primary-foreground hover:bg-primary/90"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="mr-2 size-4 animate-spin" />
-              Analyzing Fighters...
-            </>
-          ) : (
-            <>
-              <Swords className="mr-2 size-4" />
-              Generate Prediction
-            </>
-          )}
-        </Button>
+        <div className="rounded-xl border p-4 space-y-3">
+          <label className="text-sm font-medium">Weight Class</label>
+          <select
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              value={selectedWeightClassId}
+              onChange={(e) =>
+                  setSelectedWeightClassId(e.target.value ? Number(e.target.value) : "")
+              }
+              disabled={loadingWeightClasses}
+          >
+            <option value="">
+              {loadingWeightClasses ? "Loading weight classes..." : "Select weight class"}
+            </option>
+            {weightClasses.map((wc) => (
+                <option key={wc.weightClassId} value={wc.weightClassId}>
+                  {wc.className}
+                </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="space-y-3">
+            <BoxerInputCard
+                label="Fighter A (Red Corner)"
+                color="red"
+                name={boxerAName}
+                onNameChange={setBoxerAName}
+                attributes={boxerAAttrs}
+                onAttributeChange={(key, value) =>
+                    setBoxerAAttrs((prev) => ({ ...prev, [key]: value }))
+                }
+            />
+
+            <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                    handleGenerateProfile(
+                        boxerAName,
+                        setBoxerAAttrs,
+                        setBoxerAProfile,
+                        setLoadingBoxerA
+                    )
+                }
+                disabled={loadingBoxerA || selectedWeightClassId === ""}
+            >
+              {loadingBoxerA ? (
+                  <>
+                    <Loader2 className="mr-2 size-4 animate-spin" />
+                    Generating Fighter A...
+                  </>
+              ) : (
+                  <>
+                    <Search className="mr-2 size-4" />
+                    Generate Fighter A Profile
+                  </>
+              )}
+            </Button>
+
+            {boxerAProfile && (
+                <div className="rounded-lg border p-3 text-sm">
+                  <p><strong>Found:</strong> {boxerAProfile.boxerFound ? "Yes" : "No"}</p>
+                  <p><strong>Confidence:</strong> {boxerAProfile.confidence != null ? `${(boxerAProfile.confidence * 100).toFixed(0)}%` : "N/A"}</p>
+                  <p><strong>Reason:</strong> {boxerAProfile.matchReason || "N/A"}</p>
+                </div>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            <BoxerInputCard
+                label="Fighter B (Blue Corner)"
+                color="blue"
+                name={boxerBName}
+                onNameChange={setBoxerBName}
+                attributes={boxerBAttrs}
+                onAttributeChange={(key, value) =>
+                    setBoxerBAttrs((prev) => ({ ...prev, [key]: value }))
+                }
+            />
+
+            <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                    handleGenerateProfile(
+                        boxerBName,
+                        setBoxerBAttrs,
+                        setBoxerBProfile,
+                        setLoadingBoxerB
+                    )
+                }
+                disabled={loadingBoxerB || selectedWeightClassId === ""}
+            >
+              {loadingBoxerB ? (
+                  <>
+                    <Loader2 className="mr-2 size-4 animate-spin" />
+                    Generating Fighter B...
+                  </>
+              ) : (
+                  <>
+                    <Search className="mr-2 size-4" />
+                    Generate Fighter B Profile
+                  </>
+              )}
+            </Button>
+
+            {boxerBProfile && (
+                <div className="rounded-lg border p-3 text-sm">
+                  <p><strong>Found:</strong> {boxerBProfile.boxerFound ? "Yes" : "No"}</p>
+                  <p><strong>Confidence:</strong> {boxerBProfile.confidence != null ? `${(boxerBProfile.confidence * 100).toFixed(0)}%` : "N/A"}</p>
+                  <p><strong>Reason:</strong> {boxerBProfile.matchReason || "N/A"}</p>
+                </div>
+            )}
+          </div>
+        </div>
+
+        {error && (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3">
+              <p className="text-sm text-destructive-foreground">{error}</p>
+            </div>
+        )}
+
+        <div className="flex justify-center">
+          <Button
+              size="lg"
+              onClick={handlePredict}
+              disabled={loadingPrediction}
+              className="bg-primary px-10 text-primary-foreground hover:bg-primary/90"
+          >
+            {loadingPrediction ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  Calculating Prediction...
+                </>
+            ) : (
+                <>
+                  <Swords className="mr-2 size-4" />
+                  Calculate Prediction
+                </>
+            )}
+          </Button>
+        </div>
+
+        {result && <PredictionResults result={result} />}
       </div>
-
-      {/* Results */}
-      {result && <PredictionResults result={result} />}
-    </div>
   )
 }

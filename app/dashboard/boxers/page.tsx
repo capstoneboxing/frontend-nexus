@@ -365,7 +365,7 @@ export default function BoxersPage() {
     if (!ready || !selectedWc) return
     setLoading(true)
     setError(null)
-    apiFetch(`/api/v1/all-time-ranked-boxers/weight-class/${selectedWc}/active`)
+    apiFetch(   `/api/v1/all-time-ranked-boxers/active/weight-class/${selectedWc}`)
       .then((r) => {
         if (!r.ok) throw new Error("Failed to load boxers")
         return r.json()
