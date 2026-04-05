@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { Loader2, Search, Swords, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BoxerInputCard } from "@/components/boxer-input-card"
@@ -57,6 +57,8 @@ export default function PredictPage() {
 
   const [result, setResult] = useState<PredictionUIResult | null>(null)
   const [error, setError] = useState("")
+
+  const resultRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     async function loadWeightClasses() {
@@ -163,7 +165,15 @@ export default function PredictPage() {
         predictMatchRequest: payload,
       })
 
-      setResult(mapPredictionResponseToUI(response))
+      const mapped = mapPredictionResponseToUI(response)
+      setResult(mapped)
+
+      setTimeout(() => {
+        resultRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        })
+      }, 100)
     } catch (err) {
       console.error(err)
       setError("Failed to calculate prediction.")
@@ -411,7 +421,11 @@ export default function PredictPage() {
           </Button>
         </div>
 
-        {result && <PredictionResults result={result} />}
+        {result && (
+            <div ref={resultRef}>
+              <PredictionResults result={result} />
+            </div>
+        )}
       </div>
   )
 }

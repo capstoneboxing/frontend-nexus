@@ -109,6 +109,16 @@ export function mapAttributesToBoxerInput(
 export function mapPredictionResponseToUI(
     response: PredictionResponse
 ): PredictionUIResult {
+    let winnerName = "Unknown"
+
+    if (response.predictedWinner === "BOXER_A") {
+        winnerName = response.boxerAName ?? "Boxer A"
+    } else if (response.predictedWinner === "BOXER_B") {
+        winnerName = response.boxerBName ?? "Boxer B"
+    } else if (response.predictedWinner === "DRAW") {
+        winnerName = "Draw"
+    }
+
     return {
         boxerA: {
             name: response.boxerAName ?? "Boxer A",
@@ -120,7 +130,7 @@ export function mapPredictionResponseToUI(
             score: Number((response.closenessB ?? 0).toFixed(3)),
             winProbability: Number(((response.probabilityB ?? 0) * 100).toFixed(1)),
         },
-        predictedWinner: response.predictedWinner ?? "Unknown",
+        predictedWinner: winnerName,
         explanation: response.explanation ?? "No explanation available.",
     }
 }
