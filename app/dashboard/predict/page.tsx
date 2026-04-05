@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
-import { Loader2, Search, Swords } from "lucide-react"
+import { Loader2, Search, Swords, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BoxerInputCard } from "@/components/boxer-input-card"
 import { PredictionResults } from "@/components/prediction-results"
@@ -17,7 +17,9 @@ import {
   type PredictionUIResult,
 } from "@/lib/mappers"
 import { defaultAttributes, type BoxerAttributes } from "@/lib/predict-types"
+import { ResponseError } from "@/generated-api/runtime"
 import type {
+  BoxerProfileLookupFailureResponse,
   GenerateBoxerProfileRequest,
   GeneratedBoxerProfileResponse,
   PredictMatchRequest,
@@ -31,11 +33,22 @@ export default function PredictPage() {
   const [boxerAName, setBoxerAName] = useState("")
   const [boxerBName, setBoxerBName] = useState("")
 
-  const [boxerAAttrs, setBoxerAAttrs] = useState<BoxerAttributes>({ ...defaultAttributes })
-  const [boxerBAttrs, setBoxerBAttrs] = useState<BoxerAttributes>({ ...defaultAttributes })
+  const [boxerAAttrs, setBoxerAAttrs] = useState<BoxerAttributes>({
+    ...defaultAttributes,
+  })
+  const [boxerBAttrs, setBoxerBAttrs] = useState<BoxerAttributes>({
+    ...defaultAttributes,
+  })
 
-  const [boxerAProfile, setBoxerAProfile] = useState<GeneratedBoxerProfileResponse | null>(null)
-  const [boxerBProfile, setBoxerBProfile] = useState<GeneratedBoxerProfileResponse | null>(null)
+  const [boxerAProfile, setBoxerAProfile] =
+      useState<GeneratedBoxerProfileResponse | null>(null)
+  const [boxerBProfile, setBoxerBProfile] =
+      useState<GeneratedBoxerProfileResponse | null>(null)
+
+  const [boxerAFailure, setBoxerAFailure] =
+      useState<BoxerProfileLookupFailureResponse | null>(null)
+  const [boxerBFailure, setBoxerBFailure] =
+      useState<BoxerProfileLookupFailureResponse | null>(null)
 
   const [loadingWeightClasses, setLoadingWeightClasses] = useState(true)
   const [loadingBoxerA, setLoadingBoxerA] = useState(false)
@@ -64,7 +77,12 @@ export default function PredictPage() {
   async function handleGenerateProfile(
       boxerName: string,
       setAttrs: React.Dispatch<React.SetStateAction<BoxerAttributes>>,
-      setProfile: React.Dispatch<React.SetStateAction<GeneratedBoxerProfileResponse | null>>,
+      setProfile: React.Dispatch<
+          React.SetStateAction<GeneratedBoxerProfileResponse | null>
+      >,
+      setFailure: React.Dispatch<
+          React.SetStateAction<BoxerProfileLookupFailureResponse | null>
+      >,
       setLoading: React.Dispatch<React.SetStateAction<boolean>>
   ) {
     if (!boxerName.trim()) {
@@ -79,6 +97,8 @@ export default function PredictPage() {
 
     setError("")
     setLoading(true)
+    setProfile(null)
+    setFailure(null)
 
     try {
       const payload: GenerateBoxerProfileRequest = {
@@ -93,14 +113,25 @@ export default function PredictPage() {
       setProfile(response)
 
       if (!response.boxerFound) {
-        setError(response.matchReason || `Could not confidently identify ${boxerName}.`)
         return
       }
 
       setAttrs(mapGeneratedProfileToAttributes(response))
     } catch (err) {
       console.error(err)
-      setError(`Failed to generate profile for ${boxerName}.`)
+
+      if (err instanceof ResponseError) {
+        try {
+          const failure =
+              (await err.response.json()) as BoxerProfileLookupFailureResponse
+
+          setFailure(failure)
+        } catch {
+          console.error("Failed to parse failure response")
+        }
+      } else {
+        console.error(`Failed to generate profile for ${boxerName}.`)
+      }
     } finally {
       setLoading(false)
     }
@@ -148,7 +179,8 @@ export default function PredictPage() {
             Match Prediction
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Select one weight class, generate both boxer profiles, then calculate the prediction.
+            Select one weight class, generate both boxer profiles, then calculate
+            the prediction.
           </p>
         </div>
 
@@ -175,17 +207,6 @@ export default function PredictPage() {
 
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-3">
-            <BoxerInputCard
-                label="Fighter A (Red Corner)"
-                color="red"
-                name={boxerAName}
-                onNameChange={setBoxerAName}
-                attributes={boxerAAttrs}
-                onAttributeChange={(key, value) =>
-                    setBoxerAAttrs((prev) => ({ ...prev, [key]: value }))
-                }
-            />
-
             <Button
                 type="button"
                 variant="outline"
@@ -194,6 +215,7 @@ export default function PredictPage() {
                         boxerAName,
                         setBoxerAAttrs,
                         setBoxerAProfile,
+                        setBoxerAFailure,
                         setLoadingBoxerA
                     )
                 }
@@ -212,27 +234,63 @@ export default function PredictPage() {
               )}
             </Button>
 
-            {boxerAProfile && (
-                <div className="rounded-lg border p-3 text-sm">
+            <BoxerInputCard
+                label="Fighter A (Red Corner)"
+                color="red"
+                name={boxerAName}
+                onNameChange={setBoxerAName}
+                attributes={boxerAAttrs}
+                onAttributeChange={(key, value) =>
+                    setBoxerAAttrs((prev) => ({ ...prev, [key]: value }))
+                }
+            />
+
+            {boxerAProfile && !boxerAFailure && (
+                <div className="relative rounded-lg border p-3 pr-10 text-sm">
+                  <button
+                      type="button"
+                      onClick={() => setBoxerAProfile(null)}
+                      aria-label="Close fighter A profile result"
+                      className="absolute right-2 top-2 rounded p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  >
+                    <X className="size-4" />
+                  </button>
+
                   <p><strong>Found:</strong> {boxerAProfile.boxerFound ? "Yes" : "No"}</p>
-                  <p><strong>Confidence:</strong> {boxerAProfile.confidence != null ? `${(boxerAProfile.confidence * 100).toFixed(0)}%` : "N/A"}</p>
+                  <p>
+                    <strong>Confidence:</strong>{" "}
+                    {boxerAProfile.confidence != null
+                        ? `${(boxerAProfile.confidence * 100).toFixed(0)}%`
+                        : "N/A"}
+                  </p>
                   <p><strong>Reason:</strong> {boxerAProfile.matchReason || "N/A"}</p>
+                </div>
+            )}
+
+            {boxerAFailure && (
+                <div className="relative rounded-lg border p-3 pr-10 text-sm">
+                  <button
+                      type="button"
+                      onClick={() => setBoxerAFailure(null)}
+                      aria-label="Close fighter A failure result"
+                      className="absolute right-2 top-2 rounded p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  >
+                    <X className="size-4" />
+                  </button>
+
+                  <p><strong>Found:</strong> {boxerAFailure.boxerFound ? "Yes" : "No"}</p>
+                  <p>
+                    <strong>Confidence:</strong>{" "}
+                    {boxerAFailure.confidence != null
+                        ? `${(boxerAFailure.confidence * 100).toFixed(0)}%`
+                        : "N/A"}
+                  </p>
+                  <p><strong>Message:</strong> {boxerAFailure.message || "N/A"}</p>
                 </div>
             )}
           </div>
 
           <div className="space-y-3">
-            <BoxerInputCard
-                label="Fighter B (Blue Corner)"
-                color="blue"
-                name={boxerBName}
-                onNameChange={setBoxerBName}
-                attributes={boxerBAttrs}
-                onAttributeChange={(key, value) =>
-                    setBoxerBAttrs((prev) => ({ ...prev, [key]: value }))
-                }
-            />
-
             <Button
                 type="button"
                 variant="outline"
@@ -241,6 +299,7 @@ export default function PredictPage() {
                         boxerBName,
                         setBoxerBAttrs,
                         setBoxerBProfile,
+                        setBoxerBFailure,
                         setLoadingBoxerB
                     )
                 }
@@ -259,18 +318,74 @@ export default function PredictPage() {
               )}
             </Button>
 
-            {boxerBProfile && (
-                <div className="rounded-lg border p-3 text-sm">
+            <BoxerInputCard
+                label="Fighter B (Blue Corner)"
+                color="blue"
+                name={boxerBName}
+                onNameChange={setBoxerBName}
+                attributes={boxerBAttrs}
+                onAttributeChange={(key, value) =>
+                    setBoxerBAttrs((prev) => ({ ...prev, [key]: value }))
+                }
+            />
+
+            {boxerBProfile && !boxerBFailure && (
+                <div className="relative rounded-lg border p-3 pr-10 text-sm">
+                  <button
+                      type="button"
+                      onClick={() => setBoxerBProfile(null)}
+                      aria-label="Close fighter B profile result"
+                      className="absolute right-2 top-2 rounded p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  >
+                    <X className="size-4" />
+                  </button>
+
                   <p><strong>Found:</strong> {boxerBProfile.boxerFound ? "Yes" : "No"}</p>
-                  <p><strong>Confidence:</strong> {boxerBProfile.confidence != null ? `${(boxerBProfile.confidence * 100).toFixed(0)}%` : "N/A"}</p>
+                  <p>
+                    <strong>Confidence:</strong>{" "}
+                    {boxerBProfile.confidence != null
+                        ? `${(boxerBProfile.confidence * 100).toFixed(0)}%`
+                        : "N/A"}
+                  </p>
                   <p><strong>Reason:</strong> {boxerBProfile.matchReason || "N/A"}</p>
+                </div>
+            )}
+
+            {boxerBFailure && (
+                <div className="relative rounded-lg border p-3 pr-10 text-sm">
+                  <button
+                      type="button"
+                      onClick={() => setBoxerBFailure(null)}
+                      aria-label="Close fighter B failure result"
+                      className="absolute right-2 top-2 rounded p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  >
+                    <X className="size-4" />
+                  </button>
+
+                  <p><strong>Found:</strong> {boxerBFailure.boxerFound ? "Yes" : "No"}</p>
+                  <p>
+                    <strong>Confidence:</strong>{" "}
+                    {boxerBFailure.confidence != null
+                        ? `${(boxerBFailure.confidence * 100).toFixed(0)}%`
+                        : "N/A"}
+                  </p>
+                  <p><strong>Message:</strong> {boxerBFailure.message || "N/A"}</p>
                 </div>
             )}
           </div>
         </div>
 
         {error && (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3">
+            <div className="relative rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 pr-10">
+              <button
+                  type="button"
+                  onClick={() => setError("")}
+                  aria-label="Close error message"
+                  className="absolute right-2 top-2 rounded p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
+              >
+                <X className="size-4" />
+              </button>
+
               <p className="text-sm text-destructive-foreground">{error}</p>
             </div>
         )}
