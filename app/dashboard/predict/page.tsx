@@ -15,7 +15,7 @@ import {
   mapAttributesToBoxerInput,
   mapPredictionResponseToUI,
   type PredictionUIResult,
-} from "@/lib/mappers"
+} from "@/lib/predict-mappers"
 import { defaultAttributes, type BoxerAttributes } from "@/lib/predict-types"
 import { ResponseError } from "@/generated-api/runtime"
 import type {

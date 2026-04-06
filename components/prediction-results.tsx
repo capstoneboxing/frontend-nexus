@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { ChevronDown, ChevronUp } from "lucide-react"
-import type { PredictionUIResult } from "@/lib/mappers"
+import type { PredictionUIResult } from "@/lib/predict-mappers"
 
 interface PredictionResultsProps {
     result: PredictionUIResult
