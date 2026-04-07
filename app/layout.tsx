@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from 'next'
+import { Toaster } from "sonner"
 import { Inter, Oswald } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
+import React from "react";
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const oswald = Oswald({ subsets: ['latin'], variable: '--font-oswald' })
@@ -27,6 +29,12 @@ export default function RootLayout({
         className={`${inter.variable} ${oswald.variable} font-sans antialiased`}
       >
         {children}
+        <Toaster
+            position="top-right"
+            richColors
+            closeButton
+        />
+
         <Analytics />
       </body>
     </html>

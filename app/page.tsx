@@ -64,7 +64,7 @@ export default function LandingPage() {
       <section className="relative flex min-h-screen items-center justify-center overflow-hidden pt-20">
         {/* Background Pattern */}
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent" />
           <div className="absolute right-0 top-1/4 size-96 rounded-full bg-accent/5 blur-3xl" />
           <div className="absolute bottom-1/4 left-0 size-96 rounded-full bg-primary/5 blur-3xl" />
         </div>
@@ -273,7 +273,7 @@ export default function LandingPage() {
                 <Trophy className="size-3.5 text-primary-foreground" />
               </div>
               <span className="font-display text-lg font-bold tracking-tight text-foreground">
-                BOXPREDICT
+                BOX PREDICT
               </span>
             </div>
 
