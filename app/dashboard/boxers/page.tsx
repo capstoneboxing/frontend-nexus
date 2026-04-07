@@ -1,502 +1,323 @@
-
-// "use client"
-
-// import { useState, useMemo, useEffect } from "react"
-// import { Search, SlidersHorizontal, Users } from "lucide-react"
-// import { Input } from "@/components/ui/input"
-// import {
-//   Select,
-//   SelectContent,
-//   SelectItem,
-//   SelectTrigger,
-//   SelectValue,
-// } from "@/components/ui/select"
-// import { BoxerProfileModal } from "@/components/boxer-profile-modal"
-// import { supabase } from "@/lib/supabaseClient"
-
-// // ============================================================
-// // TYPE — matches your ranked_boxer table columns
-// // ============================================================
-// export type Boxer = {
-//   ranked_boxer_id: number
-//   boxer_name: string
-//   ranking_position: number
-//   weight_class_id: number
-//   height_cm: number
-//   reach_cm: number
-//   hand_speed: number
-//   foot_speed: number
-//   strength: number
-//   endurance: number
-//   reaction_time: number
-//   punch_accuracy: number
-//   punch_variety: number
-//   defensive_guard_efficiency: number
-//   head_movement: number
-//   footwork_technique: number
-//   counterpunching_ability: number
-//   combination_efficiency: number
-//   ring_iq: number
-//   adaptability_mid_fight: number
-//   distance_control: number
-//   tempo_control: number
-//   opponent_pattern_recognition: number
-//   fight_planning_discipline: number
-//   composure_under_pressure: number
-//   aggression_control: number
-//   mental_toughness: number
-//   focus_consistency: number
-//   resilience_after_knockdown: number
-//   win_ratio: number
-//   knockout_ratio: number
-//   title_fight_experience: number
-//   strength_of_opposition: number
-//   performance_consistency: number
-//   source_note: string
-// }
-
-// // ============================================================
-// // HELPER — calculate overall score from attributes (avg of key skills)
-// // ============================================================
-// function calculateScore(boxer: Boxer): string {
-//   const attrs = [
-//     boxer.hand_speed,
-//     boxer.foot_speed,
-//     boxer.strength,
-//     boxer.endurance,
-//     boxer.reaction_time,
-//     boxer.punch_accuracy,
-//     boxer.punch_variety,
-//     boxer.defensive_guard_efficiency,
-//     boxer.head_movement,
-//     boxer.footwork_technique,
-//     boxer.counterpunching_ability,
-//     boxer.combination_efficiency,
-//     boxer.ring_iq,
-//     boxer.adaptability_mid_fight,
-//     boxer.distance_control,
-//     boxer.tempo_control,
-//     boxer.opponent_pattern_recognition,
-//     boxer.fight_planning_discipline,
-//     boxer.composure_under_pressure,
-//     boxer.mental_toughness,
-//   ]
-//   const avg = attrs.reduce((a, b) => a + b, 0) / attrs.length
-//   return avg.toFixed(1)
-// }
-
-// // ============================================================
-// // PAGE
-// // ============================================================
-// export default function BoxersPage() {
-//   const [boxers, setBoxers] = useState<Boxer[]>([])
-//   const [loading, setLoading] = useState(true)
-//   const [error, setError] = useState<string | null>(null)
-//   const [search, setSearch] = useState("")
-//   const [selectedBoxer, setSelectedBoxer] = useState<Boxer | null>(null)
-
-//   // ----------------------------------------------------------
-//   // Fetch ranked_boxer from Supabase on mount
-//   // ----------------------------------------------------------
-//   useEffect(() => {
-//     async function fetchBoxers() {
-//       const { data, error } = await supabase
-//         .from("all_time_ranked_boxer") //table sets 
-//         .select("*")
-//         .order("ranking_position", { ascending: true })
-
-//       if (error) {
-//         console.error("❌ Supabase error:", error)
-//         setError("Failed to load boxer data.")
-//       } else {
-//         setBoxers(data as Boxer[])
-//       }
-//       setLoading(false)
-//     }
-
-//     fetchBoxers()
-//   }, [])
-
-//   // ----------------------------------------------------------
-//   // Filter by search
-//   // ----------------------------------------------------------
-//   const filteredBoxers = useMemo(() => {
-//     if (!search) return boxers
-//     const q = search.toLowerCase()
-//     return boxers.filter((b) => b.boxer_name.toLowerCase().includes(q))
-//   }, [boxers, search])
-
-//   // ----------------------------------------------------------
-//   // RENDER
-//   // ----------------------------------------------------------
-//   return (
-//     <div className="space-y-6">
-//       {/* Header */}
-//       <div>
-//         <h1 className="font-display text-2xl font-bold text-foreground">
-//           Boxer Database
-//         </h1>
-//         <p className="mt-1 text-sm text-muted-foreground">
-//           Browse fighter profiles, compare attributes, and analyze performance data.
-//         </p>
-//       </div>
-
-//       {/* Search */}
-//       <div className="flex flex-col gap-3 sm:flex-row">
-//         <div className="relative flex-1">
-//           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-//           <Input
-//             placeholder="Search fighters..."
-//             value={search}
-//             onChange={(e) => setSearch(e.target.value)}
-//             className="border-border bg-card pl-9 text-foreground placeholder:text-muted-foreground"
-//           />
-//         </div>
-//       </div>
-
-//       {/* Loading */}
-//       {loading && (
-//         <div className="flex items-center justify-center py-12">
-//           <p className="text-sm text-muted-foreground">Loading fighters from database...</p>
-//         </div>
-//       )}
-
-//       {/* Error */}
-//       {error && (
-//         <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3">
-//           <p className="text-sm text-destructive">{error}</p>
-//         </div>
-//       )}
-
-//       {/* Table */}
-//       {!loading && !error && (
-//         <div className="overflow-hidden rounded-xl border border-border bg-card">
-//           <div className="overflow-x-auto">
-//             <table className="w-full">
-//               <thead>
-//                 <tr className="border-b border-border bg-secondary/50">
-//                   <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-//                     Rank
-//                   </th>
-//                   <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-//                     Fighter
-//                   </th>
-//                   <th className="hidden px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground sm:table-cell">
-//                     Win %
-//                   </th>
-//                   <th className="hidden px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground md:table-cell">
-//                     KO %
-//                   </th>
-//                   <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-//                     Score
-//                   </th>
-//                 </tr>
-//               </thead>
-//               <tbody className="divide-y divide-border">
-//                 {filteredBoxers.map((boxer) => {
-//                   const score = calculateScore(boxer)
-//                   return (
-//                     <tr
-//                       key={boxer.ranked_boxer_id}
-//                       onClick={() => setSelectedBoxer(boxer)}
-//                       className="cursor-pointer transition-colors hover:bg-secondary/30"
-//                       role="button"
-//                       tabIndex={0}
-//                       onKeyDown={(e) => {
-//                         if (e.key === "Enter" || e.key === " ") {
-//                           e.preventDefault()
-//                           setSelectedBoxer(boxer)
-//                         }
-//                       }}
-//                     >
-//                       {/* Rank */}
-//                       <td className="px-5 py-3.5">
-//                         <span className="flex size-7 items-center justify-center rounded-full bg-primary/10 font-display text-xs font-bold text-primary">
-//                           {boxer.ranking_position}
-//                         </span>
-//                       </td>
-
-//                       {/* Name */}
-//                       <td className="px-5 py-3.5">
-//                         <div className="flex items-center gap-3">
-//                           <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 font-display text-sm font-bold text-primary">
-//                             {boxer.boxer_name.charAt(0)}
-//                           </div>
-//                           <p className="text-sm font-medium text-foreground">
-//                             {boxer.boxer_name}
-//                           </p>
-//                         </div>
-//                       </td>
-
-//                       {/* Win ratio */}
-//                       <td className="hidden px-5 py-3.5 text-sm text-muted-foreground sm:table-cell">
-//                         {(boxer.win_ratio * 100).toFixed(1)}%
-//                       </td>
-
-//                       {/* KO ratio */}
-//                       <td className="hidden px-5 py-3.5 text-sm text-muted-foreground md:table-cell">
-//                         {(boxer.knockout_ratio * 100).toFixed(1)}%
-//                       </td>
-
-//                       {/* Score */}
-//                       <td className="px-5 py-3.5 text-right">
-//                         <span className="font-display text-sm font-bold text-primary">
-//                           {score}
-//                         </span>
-//                       </td>
-//                     </tr>
-//                   )
-//                 })}
-//               </tbody>
-//             </table>
-//           </div>
-
-//           {filteredBoxers.length === 0 && (
-//             <div className="flex flex-col items-center justify-center py-12">
-//               <Users className="size-8 text-muted-foreground" />
-//               <p className="mt-3 text-sm text-muted-foreground">
-//                 No fighters found matching your search.
-//               </p>
-//             </div>
-//           )}
-//         </div>
-//       )}
-
-//       {/* Profile Modal — passes the selected boxer through */}
-//       {selectedBoxer && (
-//         <BoxerProfileModal
-//           boxer={selectedBoxer}
-//           open={!!selectedBoxer}
-//           onClose={() => setSelectedBoxer(null)}
-//         />
-//       )}
-//     </div>
-//   )
-// }
-
-
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
-import { Search, Users } from "lucide-react"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { RefreshCcw, Search, Users } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select"
-import { BoxerProfileModal } from "@/components/boxer-profile-modal"
 import { useAuthGuard } from "@/hooks/useAuthGuard"
-import { getWeightClasses, apiFetch } from "@/lib/auth"
+import { allTimeRankedBoxersApi, weightClassesApi } from "@/lib/api-client"
+import { isLoggedIn } from "@/lib/auth"
+import {
+  mapAllTimeRankedBoxerToFormValues,
+  mapAllTimeRankedBoxerToUI,
+} from "@/lib/all-time-ranked-boxer-mappers"
+import type {
+  AllTimeRankedBoxerFormValues,
+  AllTimeRankedBoxerUI,
+} from "@/lib/all-time-ranked-boxer-types"
+import { AllTimeRankedBoxerEditor } from "@/components/all-time-ranked-boxer-editor"
 
-type WeightClass = { weightClassId: number; className: string }
-
-type ApiBoxer = {
-  rankedBoxerId: number
-  boxerName: string
-  rankingPosition: number
-  weightClassId: number
-  heightCm: number
-  reachCm: number
-  handSpeed: number
-  footSpeed: number
-  strength: number
-  endurance: number
-  reactionTime: number
-  punchAccuracy: number
-  punchVariety: number
-  defensiveGuardEfficiency: number
-  headMovement: number
-  footworkTechnique: number
-  counterpunchingAbility: number
-  combinationEfficiency: number
-  ringIq: number
-  adaptabilityMidFight: number
-  distanceControl: number
-  tempoControl: number
-  opponentPatternRecognition: number
-  fightPlanningDiscipline: number
-  composureUnderPressure: number
-  aggressionControl: number
-  mentalToughness: number
-  focusConsistency: number
-  resilienceAfterKnockdown: number
-  winRatio: number
-  knockoutRatio: number
-  titleFightExperience: number
-  strengthOfOpposition: number
-  performanceConsistency: number
-  sourceNote: string
-}
-
-const SCORE_KEYS: (keyof ApiBoxer)[] = [
-  "handSpeed", "footSpeed", "strength", "endurance", "reactionTime",
-  "punchAccuracy", "punchVariety", "defensiveGuardEfficiency", "headMovement",
-  "footworkTechnique", "counterpunchingAbility", "combinationEfficiency",
-  "ringIq", "adaptabilityMidFight", "distanceControl", "tempoControl",
-  "opponentPatternRecognition", "fightPlanningDiscipline", "composureUnderPressure",
-  "mentalToughness",
-]
-
-function calcScore(boxer: ApiBoxer): string {
-  const vals = SCORE_KEYS.map((k) => Number(boxer[k]) || 0)
-  return (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1)
+type WeightClass = {
+  weightClassId?: number
+  className?: string
 }
 
 export default function BoxersPage() {
   const ready = useAuthGuard()
-  const [weightClasses, setWeightClasses] = useState<WeightClass[]>([])
-  const [boxers, setBoxers] = useState<ApiBoxer[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [selectedWc, setSelectedWc] = useState<string>("11") // default welterweight
-  const [search, setSearch] = useState("")
-  const [selectedBoxer, setSelectedBoxer] = useState<ApiBoxer | null>(null)
+  const canEdit = isLoggedIn()
 
-  // Load weight classes
+  const [weightClasses, setWeightClasses] = useState<WeightClass[]>([])
+  const [weightClassMap, setWeightClassMap] = useState<Record<number, string>>({})
+
+  const [allBoxers, setAllBoxers] = useState<AllTimeRankedBoxerUI[]>([])
+  const [loading, setLoading] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const [selectedWc, setSelectedWc] = useState<string>("all")
+  const [search, setSearch] = useState("")
+
+  const [selectedBoxer, setSelectedBoxer] = useState<AllTimeRankedBoxerUI | null>(null)
+  const [editorValues, setEditorValues] = useState<AllTimeRankedBoxerFormValues | null>(null)
+
+  const sortBoxers = useCallback((boxers: AllTimeRankedBoxerUI[]) => {
+    return [...boxers].sort((a, b) => {
+      const rankDiff = (a.rankingPosition ?? 999) - (b.rankingPosition ?? 999)
+      if (rankDiff !== 0) return rankDiff
+
+      const weightClassDiff =
+          (a.weightClassId ?? Number.MAX_SAFE_INTEGER) -
+          (b.weightClassId ?? Number.MAX_SAFE_INTEGER)
+      if (weightClassDiff !== 0) return weightClassDiff
+
+      return a.boxerName.localeCompare(b.boxerName)
+    })
+  }, [])
+
+  const loadPageData = useCallback(async (isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setRefreshing(true)
+      } else {
+        setLoading(true)
+      }
+
+      setError(null)
+
+      const [weightClassData, boxerData] = await Promise.all([
+        weightClassesApi.getWeightClasses(),
+        allTimeRankedBoxersApi.getAllActive(),
+      ])
+
+      setWeightClasses(weightClassData)
+
+      const map = Object.fromEntries(
+          weightClassData
+              .filter((wc) => wc.weightClassId != null)
+              .map((wc) => [wc.weightClassId as number, wc.className ?? "Unknown"])
+      )
+      setWeightClassMap(map)
+
+      const mappedBoxers = sortBoxers(
+          boxerData.map((boxer) =>
+              mapAllTimeRankedBoxerToUI(
+                  boxer,
+                  boxer.weightClassId != null
+                      ? map[boxer.weightClassId] ?? "Unknown"
+                      : "Unknown"
+              )
+          )
+      )
+
+      setAllBoxers(mappedBoxers)
+    } catch (err) {
+      console.error(err)
+      setError("Failed to load active ranked boxers.")
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }, [sortBoxers])
+
   useEffect(() => {
     if (!ready) return
-    getWeightClasses()
-      .then((r) => r.json())
-      .then(setWeightClasses)
-      .catch(console.error)
-  }, [ready])
+    void loadPageData()
+  }, [ready, loadPageData])
 
-  // Load boxers when weight class changes
-  useEffect(() => {
-    if (!ready || !selectedWc) return
-    setLoading(true)
-    setError(null)
-    apiFetch(   `/api/v1/all-time-ranked-boxers/active/weight-class/${selectedWc}`)
-      .then((r) => {
-        if (!r.ok) throw new Error("Failed to load boxers")
-        return r.json()
-      })
-      .then((data) => setBoxers(data.sort((a: ApiBoxer, b: ApiBoxer) => a.rankingPosition - b.rankingPosition)))
-      .catch(() => setError("Failed to load boxers for this weight class."))
-      .finally(() => setLoading(false))
-  }, [ready, selectedWc])
+  const boxers = useMemo(() => {
+    if (selectedWc === "all") {
+      return allBoxers
+    }
+
+    const weightClassId = Number(selectedWc)
+    return allBoxers.filter((boxer) => boxer.weightClassId === weightClassId)
+  }, [allBoxers, selectedWc])
 
   const filtered = useMemo(() => {
-    if (!search) return boxers
-    return boxers.filter((b) => b.boxerName.toLowerCase().includes(search.toLowerCase()))
+    if (!search.trim()) return boxers
+
+    return boxers.filter((b) =>
+        b.boxerName.toLowerCase().includes(search.toLowerCase())
+    )
   }, [boxers, search])
+
+  function openEditor(boxer: AllTimeRankedBoxerUI) {
+    setSelectedBoxer(boxer)
+    setEditorValues(mapAllTimeRankedBoxerToFormValues(boxer))
+  }
+
+  function closeEditor() {
+    setSelectedBoxer(null)
+    setEditorValues(null)
+  }
+
+  function handleSaved(updated: AllTimeRankedBoxerUI) {
+    setAllBoxers((prev) =>
+        sortBoxers(
+            prev.map((b) => (b.rankedBoxerId === updated.rankedBoxerId ? updated : b))
+        )
+    )
+
+    setSelectedBoxer(updated)
+    setEditorValues(mapAllTimeRankedBoxerToFormValues(updated))
+  }
 
   if (!ready) return null
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-bold text-foreground">Boxer Database</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Browse fighter profiles, compare attributes, and analyze performance data.
-        </p>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search fighters..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="border-border bg-card pl-9 text-foreground placeholder:text-muted-foreground"
-          />
+      <div className="space-y-6">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-foreground">
+            Boxer Database
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Browse fighter profiles, compare attributes, and edit ranked boxer records.
+          </p>
         </div>
-        <Select value={selectedWc} onValueChange={setSelectedWc}>
-          <SelectTrigger className="w-full border-border bg-card text-foreground sm:w-56">
-            <SelectValue placeholder="Select weight class" />
-          </SelectTrigger>
-          <SelectContent className="border-border bg-card text-foreground">
-            {weightClasses.map((wc) => (
-              <SelectItem key={wc.weightClassId} value={String(wc.weightClassId)}>
-                {wc.className}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
 
-      {loading && (
-        <div className="flex justify-center py-12">
-          <p className="text-sm text-muted-foreground">Loading fighters...</p>
-        </div>
-      )}
-
-      {error && (
-        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3">
-          <p className="text-sm text-destructive">{error}</p>
-        </div>
-      )}
-
-      {!loading && !error && (
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border bg-secondary/50">
-                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Rank</th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Fighter</th>
-                  <th className="hidden px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground sm:table-cell">Win %</th>
-                  <th className="hidden px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground md:table-cell">KO %</th>
-                  <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">Score</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {filtered.map((boxer) => (
-                  <tr
-                    key={boxer.rankedBoxerId}
-                    onClick={() => setSelectedBoxer(boxer)}
-                    className="cursor-pointer transition-colors hover:bg-secondary/30"
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") setSelectedBoxer(boxer)
-                    }}
-                  >
-                    <td className="px-5 py-3.5">
-                      <span className="flex size-7 items-center justify-center rounded-full bg-primary/10 font-display text-xs font-bold text-primary">
-                        {boxer.rankingPosition}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-3">
-                        <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 font-display text-sm font-bold text-primary">
-                          {boxer.boxerName.charAt(0)}
-                        </div>
-                        <p className="text-sm font-medium text-foreground">{boxer.boxerName}</p>
-                      </div>
-                    </td>
-                    <td className="hidden px-5 py-3.5 text-sm text-muted-foreground sm:table-cell">
-                      {(boxer.winRatio * 100).toFixed(1)}%
-                    </td>
-                    <td className="hidden px-5 py-3.5 text-sm text-muted-foreground md:table-cell">
-                      {(boxer.knockoutRatio * 100).toFixed(1)}%
-                    </td>
-                    <td className="px-5 py-3.5 text-right">
-                      <span className="font-display text-sm font-bold text-primary">{calcScore(boxer)}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+                placeholder="Search fighters..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="border-border bg-card pl-9 text-foreground placeholder:text-muted-foreground"
+            />
           </div>
 
-          {filtered.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-12">
-              <Users className="size-8 text-muted-foreground" />
-              <p className="mt-3 text-sm text-muted-foreground">No fighters found.</p>
-            </div>
-          )}
-        </div>
-      )}
+          <Select value={selectedWc} onValueChange={setSelectedWc}>
+            <SelectTrigger className="w-full border-border bg-card text-foreground sm:w-56">
+              <SelectValue placeholder="Select weight class" />
+            </SelectTrigger>
+            <SelectContent className="border-border bg-card text-foreground">
+              <SelectItem value="all">All</SelectItem>
+              {weightClasses.map((wc) => (
+                  <SelectItem
+                      key={wc.weightClassId}
+                      value={String(wc.weightClassId)}
+                  >
+                    {wc.className}
+                  </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-      {selectedBoxer && (
-        <BoxerProfileModal
-          boxer={selectedBoxer}
-          open={!!selectedBoxer}
-          onClose={() => setSelectedBoxer(null)}
-        />
-      )}
-    </div>
+          <Button
+              type="button"
+              variant="outline"
+              onClick={() => void loadPageData(true)}
+              disabled={loading || refreshing}
+              className="border-border bg-card text-foreground"
+          >
+            <RefreshCcw className={`mr-2 size-4 ${refreshing ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
+
+        {loading && (
+            <div className="flex justify-center py-12">
+              <p className="text-sm text-muted-foreground">Loading fighters...</p>
+            </div>
+        )}
+
+        {error && (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3">
+              <p className="text-sm text-destructive">{error}</p>
+            </div>
+        )}
+
+        {!loading && !error && (
+            <div className="overflow-hidden rounded-xl border border-border bg-card">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                  <tr className="border-b border-border bg-secondary/50">
+                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Rank
+                    </th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Fighter
+                    </th>
+                    <th className="hidden px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground sm:table-cell">
+                      Win %
+                    </th>
+                    <th className="hidden px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground md:table-cell">
+                      KO %
+                    </th>
+                    <th className="hidden px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground lg:table-cell">
+                      Generated
+                    </th>
+                  </tr>
+                  </thead>
+
+                  <tbody className="divide-y divide-border">
+                  {filtered.map((boxer) => (
+                      <tr
+                          key={boxer.rankedBoxerId}
+                          onClick={() => openEditor(boxer)}
+                          className="cursor-pointer transition-colors hover:bg-secondary/30"
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault()
+                              openEditor(boxer)
+                            }
+                          }}
+                      >
+                        <td className="px-5 py-3.5">
+                      <span className="flex size-7 items-center justify-center rounded-full bg-primary/10 font-display text-xs font-bold text-primary">
+                        {boxer.rankingPosition ?? "—"}
+                      </span>
+                        </td>
+
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-3">
+                            <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 font-display text-sm font-bold text-primary">
+                              {boxer.boxerName.charAt(0)}
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-foreground">
+                                {boxer.boxerName}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {boxer.weightClassName}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="hidden px-5 py-3.5 text-sm text-muted-foreground sm:table-cell">
+                          {(boxer.winRatio * 100).toFixed(0)}%
+                        </td>
+
+                        <td className="hidden px-5 py-3.5 text-sm text-muted-foreground md:table-cell">
+                          {(boxer.knockoutRatio * 100).toFixed(0)}%
+                        </td>
+
+                        <td className="hidden px-5 py-3.5 text-sm text-muted-foreground lg:table-cell">
+                          {boxer.generatedAtLabel}
+                        </td>
+                      </tr>
+                  ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {filtered.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <Users className="size-8 text-muted-foreground" />
+                    <p className="mt-3 text-sm text-muted-foreground">
+                      No fighters found.
+                    </p>
+                  </div>
+              )}
+            </div>
+        )}
+
+        {selectedBoxer && editorValues && (
+            <AllTimeRankedBoxerEditor
+                boxer={selectedBoxer}
+                values={editorValues}
+                onValuesChange={setEditorValues}
+                onClose={closeEditor}
+                onSaved={handleSaved}
+                canEdit={canEdit}
+                weightClassName={
+                  selectedBoxer.weightClassId != null
+                      ? weightClassMap[selectedBoxer.weightClassId] ?? selectedBoxer.weightClassName
+                      : selectedBoxer.weightClassName
+                }
+            />
+        )}
+      </div>
   )
 }

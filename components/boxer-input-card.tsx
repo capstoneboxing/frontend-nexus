@@ -3,7 +3,6 @@
 import { useState } from "react"
 import {
   ChevronDown,
-  Database,
   Ruler,
   Zap,
   Crosshair,
@@ -11,7 +10,6 @@ import {
   Heart,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 import { AttributeSlider } from "@/components/attribute-slider"
 import {
   type BoxerAttributes,
@@ -91,7 +89,7 @@ export function BoxerInputCard({
   return (
       <div className="rounded-xl border border-border bg-card">
         <div
-            className={`flex items-center justify-between rounded-t-xl border-b border-border px-5 py-3 ${
+            className={`flex items-center rounded-t-xl border-b border-border px-5 py-3 ${
                 color === "red" ? "bg-primary/5" : "bg-accent/5"
             }`}
         >
@@ -105,16 +103,6 @@ export function BoxerInputCard({
             {label}
           </span>
           </div>
-
-          <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs text-muted-foreground hover:text-foreground"
-              disabled
-          >
-            <Database className="mr-1.5 size-3" />
-            Auto-fill
-          </Button>
         </div>
 
         <div className="space-y-3 p-5">

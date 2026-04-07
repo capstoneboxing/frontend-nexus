@@ -8,15 +8,11 @@ import {
     PredictionHistoryApi,
     WeightClassesApi,
 } from "@/generated-api/apis"
-
-function getAccessToken(): string {
-    if (typeof window === "undefined") return ""
-    return localStorage.getItem("token") ?? ""
-}
+import { getToken } from "@/lib/auth"
 
 const config = new Configuration({
     basePath: "/api/proxy",
-    accessToken: async (_name?: string, _scopes?: string[]) => getAccessToken(),
+    accessToken: async (_name?: string, _scopes?: string[]) => getToken() ?? "",
 })
 
 export const allTimeRankedBoxersApi = new AllTimeRankedBoxersApi(config)

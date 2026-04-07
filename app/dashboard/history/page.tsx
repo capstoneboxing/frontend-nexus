@@ -6,12 +6,14 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
+  RefreshCcw,
   Search,
   Swords,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { predictionHistoryApi, weightClassesApi } from "@/lib/api-client"
+import { isLoggedIn } from "@/lib/auth"
 import { mapPredictionHistoryToUI } from "@/lib/history-mappers"
 import type { PredictionHistoryUI } from "@/lib/history-types"
 import type { PredictionResultUpdateRequest } from "@/generated-api/models"
@@ -26,13 +28,6 @@ type WeightClassOption = {
 
 type MatchWinnerToken = "" | "BOXER_A" | "BOXER_B" | "DRAW"
 type MatchWinMethodToken = "" | "KO" | "TKO" | "DECISION" | "DISQUALIFICATION"
-
-const statusStyles = {
-  pending: "bg-muted text-muted-foreground",
-  correct: "bg-primary/10 text-primary",
-  incorrect: "bg-destructive/10 text-destructive",
-  draw: "bg-accent/10 text-accent",
-}
 
 function getAllowedMethods(winner: MatchWinnerToken): MatchWinMethodToken[] {
   if (winner === "DRAW") return ["DECISION"]
@@ -59,10 +54,36 @@ function isValidWinnerMethodCombo(
   return false
 }
 
+function getPredictedWinnerTextClass(pred: PredictionHistoryUI): string {
+  if (pred.predictedWinnerRaw === "BOXER_A") return "text-red-400"
+  if (pred.predictedWinnerRaw === "BOXER_B") return "text-yellow-300"
+  if (pred.predictedWinnerRaw === "DRAW") return "text-sky-300"
+  return "text-foreground"
+}
+
+function getStatusBadgeClass(pred: PredictionHistoryUI): string {
+  if (pred.status === "correct") {
+    return "bg-green-500/10 text-green-400 border border-green-500/20"
+  }
+
+  if (pred.status === "draw") {
+    return "bg-sky-300/10 text-sky-300 border border-sky-300/20"
+  }
+
+  if (pred.status === "incorrect") {
+    return "bg-destructive/10 text-destructive border border-destructive/20"
+  }
+
+  return "bg-muted text-muted-foreground border border-border"
+}
+
 export default function HistoryPage() {
+  const loggedIn = isLoggedIn()
+
   const [predictions, setPredictions] = useState<PredictionHistoryUI[]>([])
   const [weightClassMap, setWeightClassMap] = useState<Record<number, string>>({})
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState("")
   const [sortField, setSortField] = useState<SortField>("predictionDate")
@@ -75,59 +96,67 @@ export default function HistoryPage() {
       useState<MatchWinMethodToken>("")
   const [savingUpdate, setSavingUpdate] = useState(false)
 
-  useEffect(() => {
-    async function fetchAll() {
-      try {
-        const [historyData, weightClassData] = await Promise.all([
-          predictionHistoryApi.getPredictionHistories(),
-          weightClassesApi.getWeightClasses(),
-        ])
-
-        const wcMap = Object.fromEntries(
-            (weightClassData as WeightClassOption[])
-                .filter((wc) => wc.weightClassId != null)
-                .map((wc) => [wc.weightClassId as number, wc.className ?? "Unknown"])
-        )
-
-        setWeightClassMap(wcMap)
-
-        const mapped = historyData.map((item) => {
-          const ui = mapPredictionHistoryToUI(item)
-          return {
-            ...ui,
-            weightClassName:
-                ui.weightClassId != null ? wcMap[ui.weightClassId] ?? "Unknown" : "N/A",
-          }
-        })
-
-        setPredictions(mapped)
-      } catch (err) {
-        console.error(err)
-        setError("Failed to load prediction history.")
-      } finally {
-        setLoading(false)
+  async function fetchAll(isRefresh = false) {
+    try {
+      if (isRefresh) {
+        setRefreshing(true)
+      } else {
+        setLoading(true)
       }
-    }
 
+      const [historyData, weightClassData] = await Promise.all([
+        predictionHistoryApi.getPredictionHistories(),
+        weightClassesApi.getWeightClasses(),
+      ])
+
+      const wcMap = Object.fromEntries(
+          (weightClassData as WeightClassOption[])
+              .filter((wc) => wc.weightClassId != null)
+              .map((wc) => [wc.weightClassId as number, wc.className ?? "Unknown"])
+      )
+
+      setWeightClassMap(wcMap)
+
+      const mapped = historyData.map((item) => {
+        const ui = mapPredictionHistoryToUI(item)
+        return {
+          ...ui,
+          weightClassName:
+              ui.weightClassId != null ? wcMap[ui.weightClassId] ?? "Unknown" : "N/A",
+        }
+      })
+
+      setPredictions(mapped)
+      setError(null)
+    } catch (err) {
+      console.error(err)
+      setError("Failed to load prediction history.")
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }
+
+  useEffect(() => {
     void fetchAll()
   }, [])
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
-    let data = [...predictions]
+    const data = [...predictions]
 
-    if (q) {
-      data = data.filter(
-          (p) =>
-              p.boxerAName.toLowerCase().includes(q) ||
-              p.boxerBName.toLowerCase().includes(q) ||
-              p.predictedWinnerLabel.toLowerCase().includes(q) ||
-              (p.matchWinnerLabel ?? "").toLowerCase().includes(q) ||
-              p.weightClassName.toLowerCase().includes(q)
-      )
-    }
+    const searched = q
+        ? data.filter(
+            (p) =>
+                p.boxerAName.toLowerCase().includes(q) ||
+                p.boxerBName.toLowerCase().includes(q) ||
+                p.predictedWinnerLabel.toLowerCase().includes(q) ||
+                (p.matchWinnerLabel ?? "").toLowerCase().includes(q) ||
+                p.weightClassName.toLowerCase().includes(q)
+        )
+        : data
 
-    data.sort((a, b) => {
+    searched.sort((a, b) => {
       let cmp = 0
 
       if (sortField === "predictionDate") {
@@ -142,7 +171,7 @@ export default function HistoryPage() {
       return sortDir === "desc" ? -cmp : cmp
     })
 
-    return data
+    return searched
   }, [predictions, search, sortField, sortDir])
 
   const stats = useMemo(() => {
@@ -317,6 +346,26 @@ export default function HistoryPage() {
                 className="border-border bg-card pl-9 text-foreground placeholder:text-muted-foreground"
             />
           </div>
+
+          <Button
+              type="button"
+              variant="outline"
+              onClick={() => void fetchAll(true)}
+              disabled={loading || refreshing}
+              className="sm:w-auto"
+          >
+            {refreshing ? (
+                <>
+                  <RefreshCcw className="mr-2 size-4 animate-spin" />
+                  Refreshing...
+                </>
+            ) : (
+                <>
+                  <RefreshCcw className="mr-2 size-4" />
+                  Refresh
+                </>
+            )}
+          </Button>
         </div>
 
         {loading && (
@@ -440,24 +489,30 @@ export default function HistoryPage() {
                             </td>
 
                             <td className="hidden px-5 py-3.5 sm:table-cell">
-                          <span className="font-display text-sm font-bold text-foreground">
+                          <span className="font-display text-sm font-bold text-red-400">
                             {(pred.probabilityA * 100).toFixed(0)}%
                           </span>
                             </td>
 
                             <td className="hidden px-5 py-3.5 md:table-cell">
-                          <span className="font-display text-sm font-bold text-foreground">
+                          <span className="font-display text-sm font-bold text-yellow-300">
                             {(pred.probabilityB * 100).toFixed(0)}%
                           </span>
                             </td>
 
-                            <td className="px-5 py-3.5 text-sm text-foreground">
+                            <td
+                                className={`px-5 py-3.5 text-sm font-medium ${getPredictedWinnerTextClass(
+                                    pred
+                                )}`}
+                            >
                               {pred.predictedWinnerLabel}
                             </td>
 
                             <td className="px-5 py-3.5">
                           <span
-                              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[pred.status]}`}
+                              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${getStatusBadgeClass(
+                                  pred
+                              )}`}
                           >
                             {pred.status}
                           </span>
@@ -465,7 +520,7 @@ export default function HistoryPage() {
                           </tr>
 
                           {isExpanded && (
-                              <tr className="border-l-4 border-red-800 ">
+                              <tr className="border-l-4 border-red-800">
                                 <td colSpan={6} className="px-5 py-4">
                                   <div className="space-y-5">
                                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -485,7 +540,11 @@ export default function HistoryPage() {
                                         <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
                                           Predicted Winner
                                         </p>
-                                        <p className="mt-0.5 text-sm font-medium text-foreground">
+                                        <p
+                                            className={`mt-0.5 text-sm font-medium ${getPredictedWinnerTextClass(
+                                                pred
+                                            )}`}
+                                        >
                                           {pred.predictedWinnerLabel}
                                         </p>
                                       </div>
@@ -512,91 +571,103 @@ export default function HistoryPage() {
                                       </div>
                                     </div>
 
-                                    <div className="rounded-lg border border-border bg-card p-4">
-                                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                        Update Actual Result
-                                      </p>
+                                    {loggedIn && (
+                                        <div className="rounded-lg border border-border bg-card p-4">
+                                          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                            Update Actual Result
+                                          </p>
 
-                                      <div className="mt-3 grid gap-3 md:grid-cols-3">
-                                        <select
-                                            value={editingId === pred.id ? editMatchWinner : ""}
-                                            onChange={(e) => {
-                                              if (editingId !== pred.id) startEditing(pred)
+                                          <div className="mt-3 grid gap-3 md:grid-cols-3">
+                                            <select
+                                                value={editingId === pred.id ? editMatchWinner : ""}
+                                                onChange={(e) => {
+                                                  if (editingId !== pred.id) startEditing(pred)
 
-                                              const nextWinner = e.target.value as MatchWinnerToken
-                                              setEditMatchWinner(nextWinner)
+                                                  const nextWinner = e.target.value as MatchWinnerToken
+                                                  setEditMatchWinner(nextWinner)
 
-                                              if (!isValidWinnerMethodCombo(nextWinner, editMatchWinMethod)) {
-                                                setEditMatchWinMethod("")
-                                              }
-                                            }}
-                                            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                                        >
-                                          <option value="">Select winner</option>
-                                          <option value="BOXER_A">{pred.boxerAName}</option>
-                                          <option value="BOXER_B">{pred.boxerBName}</option>
-                                          <option value="DRAW">Draw</option>
-                                        </select>
+                                                  if (
+                                                      !isValidWinnerMethodCombo(
+                                                          nextWinner,
+                                                          editMatchWinMethod
+                                                      )
+                                                  ) {
+                                                    setEditMatchWinMethod("")
+                                                  }
+                                                }}
+                                                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                                            >
+                                              <option value="">Select winner</option>
+                                              <option value="BOXER_A">{pred.boxerAName}</option>
+                                              <option value="BOXER_B">{pred.boxerBName}</option>
+                                              <option value="DRAW">Draw</option>
+                                            </select>
 
-                                        <select
-                                            value={editingId === pred.id ? editMatchWinMethod : ""}
-                                            onChange={(e) => {
-                                              if (editingId !== pred.id) startEditing(pred)
-                                              setEditMatchWinMethod(
-                                                  e.target.value as MatchWinMethodToken
-                                              )
-                                            }}
-                                            disabled={editingId !== pred.id || !editMatchWinner}
-                                            className="w-full rounded-md border bg-background px-3 py-2 text-sm disabled:opacity-60"
-                                        >
-                                          <option value="">Select method</option>
-                                          {allowedMethods.map((method) => (
-                                              <option key={method} value={method}>
-                                                {method}
-                                              </option>
-                                          ))}
-                                        </select>
-
-                                        <div className="flex gap-2">
-                                          <Button
-                                              type="button"
-                                              onClick={() => saveUpdate(pred)}
-                                              disabled={
-                                                  savingUpdate ||
-                                                  editingId !== pred.id ||
-                                                  !editMatchWinner ||
-                                                  !editMatchWinMethod ||
-                                                  !isValidWinnerMethodCombo(
-                                                      editMatchWinner,
-                                                      editMatchWinMethod
+                                            <select
+                                                value={editingId === pred.id ? editMatchWinMethod : ""}
+                                                onChange={(e) => {
+                                                  if (editingId !== pred.id) startEditing(pred)
+                                                  setEditMatchWinMethod(
+                                                      e.target.value as MatchWinMethodToken
                                                   )
-                                              }
-                                          >
-                                            {savingUpdate && editingId === pred.id ? "Saving..." : "Save"}
-                                          </Button>
+                                                }}
+                                                disabled={editingId !== pred.id || !editMatchWinner}
+                                                className="w-full rounded-md border bg-background px-3 py-2 text-sm disabled:opacity-60"
+                                            >
+                                              <option value="">Select method</option>
+                                              {allowedMethods.map((method) => (
+                                                  <option key={method} value={method}>
+                                                    {method}
+                                                  </option>
+                                              ))}
+                                            </select>
 
-                                          {editingId === pred.id && (
+                                            <div className="flex gap-2">
                                               <Button
                                                   type="button"
-                                                  variant="outline"
-                                                  onClick={cancelEditing}
-                                                  disabled={savingUpdate}
+                                                  onClick={() => saveUpdate(pred)}
+                                                  disabled={
+                                                      savingUpdate ||
+                                                      editingId !== pred.id ||
+                                                      !editMatchWinner ||
+                                                      !editMatchWinMethod ||
+                                                      !isValidWinnerMethodCombo(
+                                                          editMatchWinner,
+                                                          editMatchWinMethod
+                                                      )
+                                                  }
                                               >
-                                                Cancel
+                                                {savingUpdate && editingId === pred.id
+                                                    ? "Saving..."
+                                                    : "Save"}
                                               </Button>
-                                          )}
-                                        </div>
-                                      </div>
 
-                                      {editingId === pred.id &&
-                                          editMatchWinner &&
-                                          editMatchWinMethod &&
-                                          !isValidWinnerMethodCombo(editMatchWinner, editMatchWinMethod) && (
-                                              <p className="mt-3 text-sm text-destructive">
-                                                That winner and method combination does not make sense.
-                                              </p>
-                                          )}
-                                    </div>
+                                              {editingId === pred.id && (
+                                                  <Button
+                                                      type="button"
+                                                      variant="outline"
+                                                      onClick={cancelEditing}
+                                                      disabled={savingUpdate}
+                                                  >
+                                                    Cancel
+                                                  </Button>
+                                              )}
+                                            </div>
+                                          </div>
+
+                                          {editingId === pred.id &&
+                                              editMatchWinner &&
+                                              editMatchWinMethod &&
+                                              !isValidWinnerMethodCombo(
+                                                  editMatchWinner,
+                                                  editMatchWinMethod
+                                              ) && (
+                                                  <p className="mt-3 text-sm text-destructive">
+                                                    That winner and method combination does not make sense.
+                                                  </p>
+                                              )}
+                                        </div>
+                                    )}
 
                                     <div className="grid gap-4 md:grid-cols-2">
                                       <div className="rounded-lg border border-border bg-card p-4">
@@ -605,19 +676,20 @@ export default function HistoryPage() {
                                         </p>
 
                                         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                                          <div className="rounded-md border border-red-900/20  p-3">
+                                          <div className="rounded-md border border-red-900/20 p-3">
                                             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
                                               {pred.boxerAName} Closeness
                                             </p>
-                                            <p className="mt-1 font-display text-lg font-bold text-foreground">
+                                            <p className="mt-1 font-display text-lg font-bold text-red-400">
                                               {pred.boxerAClosenessScore.toFixed(2)}
                                             </p>
                                           </div>
-                                          <div className="rounded-md border border-red-900/20  p-3">
+
+                                          <div className="rounded-md border border-yellow-300/20 p-3">
                                             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
                                               {pred.boxerBName} Closeness
                                             </p>
-                                            <p className="mt-1 font-display text-lg font-bold text-foreground">
+                                            <p className="mt-1 font-display text-lg font-bold text-yellow-300">
                                               {pred.boxerBClosenessScore.toFixed(2)}
                                             </p>
                                           </div>
@@ -626,16 +698,16 @@ export default function HistoryPage() {
                                             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
                                               {pred.boxerAName} Probability
                                             </p>
-                                            <p className="mt-1 font-display text-lg font-bold text-foreground">
+                                            <p className="mt-1 font-display text-lg font-bold text-red-400">
                                               {(pred.probabilityA * 100).toFixed(0)}%
                                             </p>
                                           </div>
 
-                                          <div className="rounded-md border border-red-900/20  p-3">
+                                          <div className="rounded-md border border-yellow-300/20 p-3">
                                             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
                                               {pred.boxerBName} Probability
                                             </p>
-                                            <p className="mt-1 font-display text-lg font-bold text-foreground">
+                                            <p className="mt-1 font-display text-lg font-bold text-yellow-300">
                                               {(pred.probabilityB * 100).toFixed(0)}%
                                             </p>
                                           </div>
@@ -652,25 +724,25 @@ export default function HistoryPage() {
                                             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
                                               {pred.boxerAName}
                                             </p>
-                                            <p className="mt-1 font-display text-lg font-bold text-foreground">
+                                            <p className="mt-1 font-display text-lg font-bold text-red-400">
                                               {snapshot?.overallScores?.boxerA?.toFixed?.(2) ?? "N/A"}
                                             </p>
                                           </div>
 
-                                          <div className="rounded-md border border-red-900/20 p-3">
+                                          <div className="rounded-md border border-yellow-300/20 p-3">
                                             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
                                               {pred.boxerBName}
                                             </p>
-                                            <p className="mt-1 font-display text-lg font-bold text-foreground">
+                                            <p className="mt-1 font-display text-lg font-bold text-yellow-300">
                                               {snapshot?.overallScores?.boxerB?.toFixed?.(2) ?? "N/A"}
                                             </p>
                                           </div>
 
-                                          <div className="rounded-md border border-red-900/20 p-3 sm:col-span-2">
+                                          <div className="rounded-md border border-sky-300/20 p-3 sm:col-span-2">
                                             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
                                               Perfect Boxer
                                             </p>
-                                            <p className="mt-1 font-display text-lg font-bold text-foreground">
+                                            <p className="mt-1 font-display text-lg font-bold text-sky-300">
                                               {snapshot?.overallScores?.perfectBoxer?.toFixed?.(2) ?? "N/A"}
                                             </p>
                                           </div>

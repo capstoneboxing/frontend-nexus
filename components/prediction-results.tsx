@@ -8,7 +8,10 @@ interface PredictionResultsProps {
     result: PredictionUIResult
 }
 
-export function PredictionResults({ result }: PredictionResultsProps) {
+export function PredictionResults({
+                                      result,
+
+                                  }: PredictionResultsProps) {
     const [showExplanation, setShowExplanation] = useState(false)
 
     const isBoxerAWinner = result.predictedWinner === result.boxerA.name
@@ -16,13 +19,17 @@ export function PredictionResults({ result }: PredictionResultsProps) {
     const isDraw = result.predictedWinner === "Draw"
 
     let winnerColorClass = "text-muted-foreground"
+    let winnerPanelClass = "bg-secondary"
 
     if (isBoxerAWinner) {
-        winnerColorClass = "text-primary"
+        winnerColorClass = "text-red-400"
+        winnerPanelClass = "border border-red-400/30 bg-red-400/10"
     } else if (isBoxerBWinner) {
-        winnerColorClass = "text-accent"
+        winnerColorClass = "text-yellow-300"
+        winnerPanelClass = "border border-yellow-300/30 bg-yellow-300/10"
     } else if (isDraw) {
-        winnerColorClass = "text-foreground"
+        winnerColorClass = "text-sky-300"
+        winnerPanelClass = "border border-sky-300/30 bg-sky-300/10"
     }
 
     return (
@@ -32,8 +39,7 @@ export function PredictionResults({ result }: PredictionResultsProps) {
                     Prediction Result
                 </p>
                 <h2 className="mt-1 font-display text-xl font-bold text-foreground">
-                    {result.boxerA.name}{" "}
-                    <span className="text-muted-foreground">vs</span>{" "}
+                    {result.boxerA.name} <span className="text-muted-foreground">vs</span>{" "}
                     {result.boxerB.name}
                 </h2>
             </div>
@@ -41,19 +47,21 @@ export function PredictionResults({ result }: PredictionResultsProps) {
             <div className="grid grid-cols-3 gap-4">
                 <div
                     className={`rounded-lg p-4 text-center ${
-                        isBoxerAWinner ? "border border-primary bg-primary/10" : "bg-primary/5"
+                        isBoxerAWinner
+                            ? "border border-red-400 bg-red-400/10"
+                            : "border border-red-400/20 bg-red-400/5"
                     }`}
                 >
-                    <p className="text-xs text-muted-foreground">{result.boxerA.name}</p>
-                    <p className="mt-1 font-display text-2xl font-bold text-primary">
+                    <p className="text-xs text-muted-foreground">🔴 {result.boxerA.name}</p>
+                    <p className="mt-1 font-display text-2xl font-bold text-red-400">
                         {result.boxerA.score}
                     </p>
-                    <p className="text-[10px] uppercase text-muted-foreground">
-                        Closeness
-                    </p>
+                    <p className="text-[10px] uppercase text-muted-foreground">Closeness</p>
                 </div>
 
-                <div className="flex flex-col items-center justify-center rounded-lg bg-secondary p-4 text-center">
+                <div
+                    className={`flex flex-col items-center justify-center rounded-lg p-4 text-center ${winnerPanelClass}`}
+                >
                     <p className="text-[10px] uppercase text-muted-foreground">
                         Predicted Winner
                     </p>
@@ -64,16 +72,16 @@ export function PredictionResults({ result }: PredictionResultsProps) {
 
                 <div
                     className={`rounded-lg p-4 text-center ${
-                        isBoxerBWinner ? "border border-accent bg-accent/10" : "bg-accent/5"
+                        isBoxerBWinner
+                            ? "border border-yellow-300 bg-yellow-300/10"
+                            : "border border-yellow-300/20 bg-yellow-300/5"
                     }`}
                 >
-                    <p className="text-xs text-muted-foreground">{result.boxerB.name}</p>
-                    <p className="mt-1 font-display text-2xl font-bold text-accent">
+                    <p className="text-xs text-muted-foreground"> {result.boxerB.name}</p>
+                    <p className="mt-1 font-display text-2xl font-bold text-yellow-300">
                         {result.boxerB.score}
                     </p>
-                    <p className="text-[10px] uppercase text-muted-foreground">
-                        Closeness
-                    </p>
+                    <p className="text-[10px] uppercase text-muted-foreground">Closeness</p>
                 </div>
             </div>
 
@@ -83,35 +91,35 @@ export function PredictionResults({ result }: PredictionResultsProps) {
                 </h3>
 
                 <div className="space-y-3">
-                    <div>
+                    <div className="rounded-lg border border-red-400/20 bg-red-400/5 p-3">
                         <div className="mb-1.5 flex items-center justify-between">
               <span className="text-sm font-medium text-foreground">
-                {result.boxerA.name}
+                 {result.boxerA.name}
               </span>
-                            <span className="font-display text-sm font-bold text-primary">
+                            <span className="font-display text-sm font-bold text-red-400">
                 {result.boxerA.winProbability}%
               </span>
                         </div>
                         <div className="h-3 overflow-hidden rounded-full bg-secondary">
                             <div
-                                className="h-full rounded-full bg-primary"
+                                className="h-full rounded-full bg-red-400"
                                 style={{ width: `${result.boxerA.winProbability}%` }}
                             />
                         </div>
                     </div>
 
-                    <div>
+                    <div className="rounded-lg border border-yellow-300/20 bg-yellow-300/5 p-3">
                         <div className="mb-1.5 flex items-center justify-between">
               <span className="text-sm font-medium text-foreground">
-                {result.boxerB.name}
+                 {result.boxerB.name}
               </span>
-                            <span className="font-display text-sm font-bold text-accent">
+                            <span className="font-display text-sm font-bold text-yellow-300">
                 {result.boxerB.winProbability}%
               </span>
                         </div>
                         <div className="h-3 overflow-hidden rounded-full bg-secondary">
                             <div
-                                className="h-full rounded-full bg-accent"
+                                className="h-full rounded-full bg-yellow-300"
                                 style={{ width: `${result.boxerB.winProbability}%` }}
                             />
                         </div>

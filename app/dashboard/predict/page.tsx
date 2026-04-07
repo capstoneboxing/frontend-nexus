@@ -60,19 +60,20 @@ export default function PredictPage() {
 
   const resultRef = useRef<HTMLDivElement | null>(null)
 
-  useEffect(() => {
-    async function loadWeightClasses() {
-      try {
-        const data = await weightClassesApi.getWeightClasses()
-        setWeightClasses(data)
-      } catch (err) {
-        console.error(err)
-        setError("Failed to load weight classes.")
-      } finally {
-        setLoadingWeightClasses(false)
-      }
+  async function loadWeightClasses() {
+    try {
+      setLoadingWeightClasses(true)
+      const data = await weightClassesApi.getWeightClasses()
+      setWeightClasses(data)
+    } catch (err) {
+      console.error(err)
+      setError("Failed to load weight classes.")
+    } finally {
+      setLoadingWeightClasses(false)
     }
+  }
 
+  useEffect(() => {
     void loadWeightClasses()
   }, [])
 
@@ -141,7 +142,7 @@ export default function PredictPage() {
 
   async function handlePredict() {
     if (!boxerAName.trim() || !boxerBName.trim()) {
-      setError("Please enter names for both fighters.")
+      setError("Please enter names for both boxers.")
       return
     }
 
@@ -196,23 +197,28 @@ export default function PredictPage() {
 
         <div className="rounded-xl border p-4 space-y-3">
           <label className="text-sm font-medium">Weight Class</label>
-          <select
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-              value={selectedWeightClassId}
-              onChange={(e) =>
-                  setSelectedWeightClassId(e.target.value ? Number(e.target.value) : "")
-              }
-              disabled={loadingWeightClasses}
-          >
-            <option value="">
-              {loadingWeightClasses ? "Loading weight classes..." : "Select weight class"}
-            </option>
-            {weightClasses.map((wc) => (
-                <option key={wc.weightClassId} value={wc.weightClassId}>
-                  {wc.className}
-                </option>
-            ))}
-          </select>
+
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <select
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                value={selectedWeightClassId}
+                onChange={(e) =>
+                    setSelectedWeightClassId(e.target.value ? Number(e.target.value) : "")
+                }
+                disabled={loadingWeightClasses}
+            >
+              <option value="">
+                {loadingWeightClasses
+                    ? "Loading weight classes..."
+                    : "Select weight class"}
+              </option>
+              {weightClasses.map((wc) => (
+                  <option key={wc.weightClassId} value={wc.weightClassId}>
+                    {wc.className}
+                  </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
@@ -234,18 +240,18 @@ export default function PredictPage() {
               {loadingBoxerA ? (
                   <>
                     <Loader2 className="mr-2 size-4 animate-spin" />
-                    Generating Fighter A...
+                    Generating Boxer A...
                   </>
               ) : (
                   <>
-                    <Search className="mr-2 size-4" />
-                    Generate Fighter A Profile
+                    <Search className="mr-2 size-4 text-red-400" />
+                    Generate Boxer A Profile
                   </>
               )}
             </Button>
 
             <BoxerInputCard
-                label="Fighter A (Red Corner)"
+                label="Boxer A (Red Corner)"
                 color="red"
                 name={boxerAName}
                 onNameChange={setBoxerAName}
@@ -282,7 +288,7 @@ export default function PredictPage() {
                   <button
                       type="button"
                       onClick={() => setBoxerAFailure(null)}
-                      aria-label="Close fighter A failure result"
+                      aria-label="Close boxer A failure result"
                       className="absolute right-2 top-2 rounded p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
                   >
                     <X className="size-4" />
@@ -318,18 +324,18 @@ export default function PredictPage() {
               {loadingBoxerB ? (
                   <>
                     <Loader2 className="mr-2 size-4 animate-spin" />
-                    Generating Fighter B...
+                    Generating Boxer B...
                   </>
               ) : (
                   <>
-                    <Search className="mr-2 size-4" />
-                    Generate Fighter B Profile
+                    <Search className="mr-2 size-4 text-yellow-300" />
+                    Generate Boxer B Profile
                   </>
               )}
             </Button>
 
             <BoxerInputCard
-                label="Fighter B (Blue Corner)"
+                label="Boxer B (Yellow Corner)"
                 color="blue"
                 name={boxerBName}
                 onNameChange={setBoxerBName}
@@ -344,7 +350,7 @@ export default function PredictPage() {
                   <button
                       type="button"
                       onClick={() => setBoxerBProfile(null)}
-                      aria-label="Close fighter B profile result"
+                      aria-label="Close boxer B profile result"
                       className="absolute right-2 top-2 rounded p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
                   >
                     <X className="size-4" />
@@ -366,7 +372,7 @@ export default function PredictPage() {
                   <button
                       type="button"
                       onClick={() => setBoxerBFailure(null)}
-                      aria-label="Close fighter B failure result"
+                      aria-label="Close boxer B failure result"
                       className="absolute right-2 top-2 rounded p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
                   >
                     <X className="size-4" />

@@ -17,6 +17,7 @@ interface AttributeSliderProps {
   max?: number
   step?: number
   displayValue?: string
+  disabled?: boolean
 }
 
 export function AttributeSlider({
@@ -28,6 +29,7 @@ export function AttributeSlider({
                                   max = 10,
                                   step = 1,
                                   displayValue,
+                                  disabled = false,
                                 }: AttributeSliderProps) {
   return (
       <div className="space-y-2">
@@ -40,6 +42,7 @@ export function AttributeSlider({
                     type="button"
                     aria-label={`Info about ${label}`}
                     className="text-muted-foreground hover:text-foreground"
+                    disabled={disabled}
                 >
                   <Info className="size-3" />
                 </button>
@@ -61,6 +64,7 @@ export function AttributeSlider({
             max={max}
             step={step}
             className="w-full"
+            disabled={disabled}
         />
       </div>
   )
