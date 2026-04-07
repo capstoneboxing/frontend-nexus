@@ -1,27 +1,29 @@
-// app/api/proxy/[...path]/route.ts
-
 import { NextRequest, NextResponse } from "next/server"
 
 const BACKEND = "https://backend-nexus-capstone.up.railway.app"
 
 async function handler(req: NextRequest) {
-  // Extract the path from the URL after /api/proxy/
   const url = req.nextUrl.pathname.replace("/api/proxy", "")
   const search = req.nextUrl.search ?? ""
   const fullUrl = `${BACKEND}${url}${search}`
 
-  // Forward Authorization header if present
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  }
+  const headers: Record<string, string> = {}
   const auth = req.headers.get("Authorization")
-  if (auth) headers["Authorization"] = auth
 
-  // Forward body for POST/PUT
+  if (auth) {
+    headers["Authorization"] = auth
+  }
+
+  const incomingContentType = req.headers.get("Content-Type")
+  if (incomingContentType) {
+    headers["Content-Type"] = incomingContentType
+  }
+
   let body: string | undefined
   if (req.method !== "GET" && req.method !== "HEAD") {
     try {
-      body = await req.text()
+      const raw = await req.text()
+      body = raw || undefined
     } catch {
       body = undefined
     }
@@ -33,31 +35,56 @@ async function handler(req: NextRequest) {
     const backendRes = await fetch(fullUrl, {
       method: req.method,
       headers,
-      body: body || undefined,
+      body,
     })
+
+    const responseHeaders = new Headers()
+    const backendContentType = backendRes.headers.get("Content-Type")
+
+    if (backendContentType) {
+      responseHeaders.set("Content-Type", backendContentType)
+    }
+
+    responseHeaders.set("Access-Control-Allow-Origin", "*")
+
+    if (backendRes.status === 204 || backendRes.status === 205) {
+      return new NextResponse(null, {
+        status: backendRes.status,
+        headers: responseHeaders,
+      })
+    }
 
     const text = await backendRes.text()
 
     return new NextResponse(text, {
       status: backendRes.status,
-      headers: {
-        "Content-Type": backendRes.headers.get("Content-Type") ?? "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
+      headers: responseHeaders,
     })
   } catch (err) {
     console.error("[Proxy] Error:", err)
     return NextResponse.json(
-      { message: "Proxy error — could not reach backend" },
-      { status: 502 }
+        { message: "Proxy error — could not reach backend" },
+        { status: 502 }
     )
   }
 }
 
-export async function GET(req: NextRequest)    { return handler(req) }
-export async function POST(req: NextRequest)   { return handler(req) }
-export async function PUT(req: NextRequest)    { return handler(req) }
-export async function DELETE(req: NextRequest) { return handler(req) }
+export async function GET(req: NextRequest) {
+  return handler(req)
+}
+
+export async function POST(req: NextRequest) {
+  return handler(req)
+}
+
+export async function PUT(req: NextRequest) {
+  return handler(req)
+}
+
+export async function DELETE(req: NextRequest) {
+  return handler(req)
+}
+
 export async function OPTIONS(req: NextRequest) {
   return new NextResponse(null, {
     status: 200,

@@ -13,6 +13,7 @@ import type {
     AllTimeRankedBoxerFormValues,
     AllTimeRankedBoxerUI,
 } from "@/lib/all-time-ranked-boxer-types"
+import {appToast} from "@/lib/toast";
 
 interface AllTimeRankedBoxerEditorProps {
     boxer: AllTimeRankedBoxerUI
@@ -147,13 +148,25 @@ export function AllTimeRankedBoxerEditor({
             })
 
             onSaved(mapAllTimeRankedBoxerToUI(updated, weightClassName))
+            appToast.success("Successfully updated all Time Ranked Boxer")
         } catch (err) {
             console.error(err)
-            setError("Failed to update boxer.")
+            appToast.error("Failed to update all Time Ranked Boxer")
         } finally {
             setSaving(false)
         }
     }
+
+    const hasChanges = useMemo(() => {
+        return sliderFields.some((field) => {
+            const key = field.key
+
+            const originalValue = boxer[key as keyof AllTimeRankedBoxerUI]
+            const currentValue = values[key]
+
+            return Number(originalValue) !== Number(currentValue)
+        })
+    }, [boxer, values])
 
     return (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/50">
@@ -248,7 +261,7 @@ export function AllTimeRankedBoxerEditor({
                         <Button
                             type="button"
                             onClick={handleSave}
-                            disabled={!canEdit || saving}
+                            disabled={!canEdit || saving || !hasChanges}
                         >
                             {saving ? "Saving..." : "Save Changes"}
                         </Button>

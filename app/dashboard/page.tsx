@@ -620,10 +620,12 @@ export default function DashboardPage() {
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {pred.predictionDate
-                                ? pred.predictionDate.toLocaleDateString("en-US", {
+                                ? pred.predictionDate.toLocaleString("en-US", {
                                   month: "long",
                                   day: "numeric",
                                   year: "numeric",
+                                  hour: "numeric",
+                                  minute: "2-digit",
                                 })
                                 : "N/A"}
                           </p>

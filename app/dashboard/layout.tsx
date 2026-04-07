@@ -5,18 +5,18 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
     BarChart3,
+    Brain,
     ChevronLeft,
-    ClipboardList,
-    Database,
-    FlaskConical,
+    Crown,
     History,
     LayoutDashboard,
     LogIn,
     LogOut,
+    Medal,
     Menu,
     Settings,
+    SlidersHorizontal,
     Swords,
-    Target,
     Trophy,
     X,
 } from "lucide-react"
@@ -38,13 +38,14 @@ type NavItem = {
 
 const navItems: NavItem[] = [
     { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
+    { label: "Ranked Boxers", href: "/dashboard/boxers", icon: Medal, requiresAuth: true },
+    { label: "Perfect Boxers", href: "/dashboard/perfectboxer", icon: Crown, requiresAuth: true },
+    { label: "Category Weights", href: "/dashboard/category", icon: SlidersHorizontal, requiresAuth: true },
     { label: "Predict Match", href: "/dashboard/predict", icon: Swords },
-    { label: "Category Weights", href: "/dashboard/category", icon: ClipboardList, requiresAuth: true },
-    { label: "Boxer Database", href: "/dashboard/boxers", icon: Database, requiresAuth: true },
     { label: "Prediction History", href: "/dashboard/history", icon: History },
-    { label: "Results Analysis", href: "/dashboard/results", icon: Target },
-    { label: "Model Explanation", href: "/dashboard/model", icon: FlaskConical },
-    { label: "Settings", href: "/dashboard/settings", icon: Settings, requiresAuth: true },
+    { label: "Results Analysis", href: "/dashboard/results", icon: BarChart3 },
+    { label: "Model Explanation", href: "/dashboard/model", icon: Brain },
+    // { label: "Settings", href: "/dashboard/settings", icon: Settings, requiresAuth: true },
 ]
 
 function isNavItemActive(pathname: string, href: string): boolean {

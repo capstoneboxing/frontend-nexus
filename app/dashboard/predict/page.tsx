@@ -225,7 +225,6 @@ export default function PredictPage() {
           <div className="space-y-3">
             <Button
                 type="button"
-                variant="outline"
                 onClick={() =>
                     handleGenerateProfile(
                         boxerAName,
@@ -236,6 +235,7 @@ export default function PredictPage() {
                     )
                 }
                 disabled={loadingBoxerA || selectedWeightClassId === ""}
+                className="border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors"
             >
               {loadingBoxerA ? (
                   <>
@@ -309,7 +309,6 @@ export default function PredictPage() {
           <div className="space-y-3">
             <Button
                 type="button"
-                variant="outline"
                 onClick={() =>
                     handleGenerateProfile(
                         boxerBName,
@@ -320,6 +319,7 @@ export default function PredictPage() {
                     )
                 }
                 disabled={loadingBoxerB || selectedWeightClassId === ""}
+                className="border-yellow-400/30 bg-yellow-400/10 text-yellow-300 hover:bg-yellow-400/20 hover:text-yellow-200 transition-colors"
             >
               {loadingBoxerB ? (
                   <>

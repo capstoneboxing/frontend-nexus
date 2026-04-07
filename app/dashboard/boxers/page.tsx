@@ -49,13 +49,14 @@ export default function BoxersPage() {
 
   const sortBoxers = useCallback((boxers: AllTimeRankedBoxerUI[]) => {
     return [...boxers].sort((a, b) => {
-      const rankDiff = (a.rankingPosition ?? 999) - (b.rankingPosition ?? 999)
-      if (rankDiff !== 0) return rankDiff
-
       const weightClassDiff =
           (a.weightClassId ?? Number.MAX_SAFE_INTEGER) -
           (b.weightClassId ?? Number.MAX_SAFE_INTEGER)
+
       if (weightClassDiff !== 0) return weightClassDiff
+
+      const rankDiff = (a.rankingPosition ?? 999) - (b.rankingPosition ?? 999)
+      if (rankDiff !== 0) return rankDiff
 
       return a.boxerName.localeCompare(b.boxerName)
     })
@@ -155,10 +156,10 @@ export default function BoxersPage() {
       <div className="space-y-6">
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground">
-            Boxer Database
+            Top All Time Ranked Boxers
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Browse fighter profiles, compare attributes, and edit ranked boxer records.
+            Browse to app time ranked boxer profiles, compare and edit attributes.
           </p>
         </div>
 
@@ -284,7 +285,7 @@ export default function BoxersPage() {
                         </td>
 
                         <td className="hidden px-5 py-3.5 text-sm text-muted-foreground lg:table-cell">
-                          {boxer.generatedAtLabel}
+                          {boxer.generatedAtLabel} at {boxer.generatedTimeLabel}
                         </td>
                       </tr>
                   ))}

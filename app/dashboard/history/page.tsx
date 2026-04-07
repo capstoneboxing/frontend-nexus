@@ -1,14 +1,13 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { appToast } from "@/lib/toast"
 import {
-  Calendar,
   ChevronDown,
   ChevronUp,
   Clock,
   RefreshCcw,
   Search,
-  Swords,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -17,6 +16,7 @@ import { isLoggedIn } from "@/lib/auth"
 import { mapPredictionHistoryToUI } from "@/lib/history-mappers"
 import type { PredictionHistoryUI } from "@/lib/history-types"
 import type { PredictionResultUpdateRequest } from "@/generated-api/models"
+import { PredictionHistoryRow } from "@/components/prediction-history-row"
 
 type SortField = "predictionDate" | "probabilityA" | "probabilityB"
 type SortDir = "asc" | "desc"
@@ -95,6 +95,7 @@ export default function HistoryPage() {
   const [editMatchWinMethod, setEditMatchWinMethod] =
       useState<MatchWinMethodToken>("")
   const [savingUpdate, setSavingUpdate] = useState(false)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
 
   async function fetchAll(isRefresh = false) {
     try {
@@ -270,11 +271,41 @@ export default function HistoryPage() {
       )
 
       cancelEditing()
+
+      appToast.success("Prediction actual result updated successfully.")
     } catch (err) {
       console.error(err)
-      setError("Failed to update prediction history.")
+      appToast.error("Failed to update prediction history.")
     } finally {
       setSavingUpdate(false)
+    }
+  }
+
+  const deletePrediction = async (pred: PredictionHistoryUI) => {
+    if (!loggedIn) return
+
+    try {
+      setDeletingId(pred.id)
+      setError(null)
+
+      await predictionHistoryApi.deletePredictionHistory({ id: pred.id })
+
+      setPredictions((prev) => prev.filter((p) => p.id !== pred.id))
+
+      if (expandedId === pred.id) {
+        setExpandedId(null)
+      }
+
+      if (editingId === pred.id) {
+        cancelEditing()
+      }
+
+      appToast.success("Prediction deleted successfully.")
+    } catch (err) {
+      console.error(err)
+      appToast.error("Failed to delete prediction history.")
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -424,388 +455,42 @@ export default function HistoryPage() {
                     <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       Status
                     </th>
+
+                    {loggedIn && (
+                        <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          Actions
+                        </th>
+                    )}
                   </tr>
                   </thead>
 
                   <tbody className="divide-y divide-border">
-                  {filtered.map((pred) => {
-                    const isExpanded = expandedId === pred.id
-                    const snapshot = pred.breakdownSnapshot
-                    const boxerACategory = snapshot?.categoryScores?.boxerA
-                    const boxerBCategory = snapshot?.categoryScores?.boxerB
-                    const perfectCategory = snapshot?.categoryScores?.perfectBoxer
-                    const allowedMethods = getAllowedMethods(
-                        editingId === pred.id ? editMatchWinner : ""
-                    )
-
-                    return (
-                        <>
-                          <tr
-                              key={pred.id}
-                              className={`cursor-pointer border-l-4 transition-colors ${
-                                  isExpanded
-                                      ? "border-l-red-800"
-                                      : "border-l-transparent hover:bg-secondary/30"
-                              }`}
-                              onClick={() => setExpandedId(isExpanded ? null : pred.id)}
-                              role="button"
-                              tabIndex={0}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter" || e.key === " ") {
-                                  e.preventDefault()
-                                  setExpandedId(isExpanded ? null : pred.id)
-                                }
-                              }}
-                          >
-                            <td className="px-5 py-3.5 text-sm text-muted-foreground">
-                              <div className="space-y-1">
-                            <span className="flex items-center gap-1.5">
-                              <Calendar className="size-3 shrink-0" />
-                              {pred.predictionDateLabel}
-                            </span>
-                                <span className="flex items-center gap-1.5">
-                              <Clock className="size-3 shrink-0" />
-                                  {pred.predictionTimeLabel}
-                            </span>
-                              </div>
-                            </td>
-
-                            <td className="px-5 py-3.5">
-                              <div className="flex items-center gap-2">
-                                <div
-                                    className={`flex size-7 items-center justify-center rounded-md ${
-                                        isExpanded ? "bg-red-900/30" : "bg-primary/10"
-                                    }`}
-                                >
-                                  <Swords className="size-3 text-primary" />
-                                </div>
-                                <p className="text-sm font-medium text-foreground">
-                                  {pred.boxerAName}
-                                  <span className="text-muted-foreground"> vs </span>
-                                  <br />
-                                  {pred.boxerBName}
-                                </p>
-                              </div>
-                            </td>
-
-                            <td className="hidden px-5 py-3.5 sm:table-cell">
-                          <span className="font-display text-sm font-bold text-red-400">
-                            {(pred.probabilityA * 100).toFixed(0)}%
-                          </span>
-                            </td>
-
-                            <td className="hidden px-5 py-3.5 md:table-cell">
-                          <span className="font-display text-sm font-bold text-yellow-300">
-                            {(pred.probabilityB * 100).toFixed(0)}%
-                          </span>
-                            </td>
-
-                            <td
-                                className={`px-5 py-3.5 text-sm font-medium ${getPredictedWinnerTextClass(
-                                    pred
-                                )}`}
-                            >
-                              {pred.predictedWinnerLabel}
-                            </td>
-
-                            <td className="px-5 py-3.5">
-                          <span
-                              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${getStatusBadgeClass(
-                                  pred
-                              )}`}
-                          >
-                            {pred.status}
-                          </span>
-                            </td>
-                          </tr>
-
-                          {isExpanded && (
-                              <tr className="border-l-4 border-red-800">
-                                <td colSpan={6} className="px-5 py-4">
-                                  <div className="space-y-5">
-                                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                                      <div>
-                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                                          Prediction Timestamp
-                                        </p>
-                                        <p className="mt-0.5 text-sm font-medium text-foreground">
-                                          {pred.predictionDateLabel}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                          {pred.predictionTimeLabel}
-                                        </p>
-                                      </div>
-
-                                      <div>
-                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                                          Predicted Winner
-                                        </p>
-                                        <p
-                                            className={`mt-0.5 text-sm font-medium ${getPredictedWinnerTextClass(
-                                                pred
-                                            )}`}
-                                        >
-                                          {pred.predictedWinnerLabel}
-                                        </p>
-                                      </div>
-
-                                      <div>
-                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                                          Actual Result
-                                        </p>
-                                        <p className="mt-0.5 text-sm font-medium text-foreground">
-                                          {pred.matchWinnerLabel ?? "Pending"}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                          {pred.matchWinMethod ?? "No method recorded"}
-                                        </p>
-                                      </div>
-
-                                      <div>
-                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                                          Weight Class
-                                        </p>
-                                        <p className="mt-0.5 text-sm font-medium text-foreground">
-                                          {pred.weightClassName}
-                                        </p>
-                                      </div>
-                                    </div>
-
-                                    {loggedIn && (
-                                        <div className="rounded-lg border border-border bg-card p-4">
-                                          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                            Update Actual Result
-                                          </p>
-
-                                          <div className="mt-3 grid gap-3 md:grid-cols-3">
-                                            <select
-                                                value={editingId === pred.id ? editMatchWinner : ""}
-                                                onChange={(e) => {
-                                                  if (editingId !== pred.id) startEditing(pred)
-
-                                                  const nextWinner = e.target.value as MatchWinnerToken
-                                                  setEditMatchWinner(nextWinner)
-
-                                                  if (
-                                                      !isValidWinnerMethodCombo(
-                                                          nextWinner,
-                                                          editMatchWinMethod
-                                                      )
-                                                  ) {
-                                                    setEditMatchWinMethod("")
-                                                  }
-                                                }}
-                                                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                                            >
-                                              <option value="">Select winner</option>
-                                              <option value="BOXER_A">{pred.boxerAName}</option>
-                                              <option value="BOXER_B">{pred.boxerBName}</option>
-                                              <option value="DRAW">Draw</option>
-                                            </select>
-
-                                            <select
-                                                value={editingId === pred.id ? editMatchWinMethod : ""}
-                                                onChange={(e) => {
-                                                  if (editingId !== pred.id) startEditing(pred)
-                                                  setEditMatchWinMethod(
-                                                      e.target.value as MatchWinMethodToken
-                                                  )
-                                                }}
-                                                disabled={editingId !== pred.id || !editMatchWinner}
-                                                className="w-full rounded-md border bg-background px-3 py-2 text-sm disabled:opacity-60"
-                                            >
-                                              <option value="">Select method</option>
-                                              {allowedMethods.map((method) => (
-                                                  <option key={method} value={method}>
-                                                    {method}
-                                                  </option>
-                                              ))}
-                                            </select>
-
-                                            <div className="flex gap-2">
-                                              <Button
-                                                  type="button"
-                                                  onClick={() => saveUpdate(pred)}
-                                                  disabled={
-                                                      savingUpdate ||
-                                                      editingId !== pred.id ||
-                                                      !editMatchWinner ||
-                                                      !editMatchWinMethod ||
-                                                      !isValidWinnerMethodCombo(
-                                                          editMatchWinner,
-                                                          editMatchWinMethod
-                                                      )
-                                                  }
-                                              >
-                                                {savingUpdate && editingId === pred.id
-                                                    ? "Saving..."
-                                                    : "Save"}
-                                              </Button>
-
-                                              {editingId === pred.id && (
-                                                  <Button
-                                                      type="button"
-                                                      variant="outline"
-                                                      onClick={cancelEditing}
-                                                      disabled={savingUpdate}
-                                                  >
-                                                    Cancel
-                                                  </Button>
-                                              )}
-                                            </div>
-                                          </div>
-
-                                          {editingId === pred.id &&
-                                              editMatchWinner &&
-                                              editMatchWinMethod &&
-                                              !isValidWinnerMethodCombo(
-                                                  editMatchWinner,
-                                                  editMatchWinMethod
-                                              ) && (
-                                                  <p className="mt-3 text-sm text-destructive">
-                                                    That winner and method combination does not make sense.
-                                                  </p>
-                                              )}
-                                        </div>
-                                    )}
-
-                                    <div className="grid gap-4 md:grid-cols-2">
-                                      <div className="rounded-lg border border-border bg-card p-4">
-                                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                          Closeness & Probabilities
-                                        </p>
-
-                                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                                          <div className="rounded-md border border-red-900/20 p-3">
-                                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                                              {pred.boxerAName} Closeness
-                                            </p>
-                                            <p className="mt-1 font-display text-lg font-bold text-red-400">
-                                              {pred.boxerAClosenessScore.toFixed(2)}
-                                            </p>
-                                          </div>
-
-                                          <div className="rounded-md border border-yellow-300/20 p-3">
-                                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                                              {pred.boxerBName} Closeness
-                                            </p>
-                                            <p className="mt-1 font-display text-lg font-bold text-yellow-300">
-                                              {pred.boxerBClosenessScore.toFixed(2)}
-                                            </p>
-                                          </div>
-
-                                          <div className="rounded-md border border-red-900/20 p-3">
-                                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                                              {pred.boxerAName} Probability
-                                            </p>
-                                            <p className="mt-1 font-display text-lg font-bold text-red-400">
-                                              {(pred.probabilityA * 100).toFixed(0)}%
-                                            </p>
-                                          </div>
-
-                                          <div className="rounded-md border border-yellow-300/20 p-3">
-                                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                                              {pred.boxerBName} Probability
-                                            </p>
-                                            <p className="mt-1 font-display text-lg font-bold text-yellow-300">
-                                              {(pred.probabilityB * 100).toFixed(0)}%
-                                            </p>
-                                          </div>
-                                        </div>
-                                      </div>
-
-                                      <div className="rounded-lg border border-border bg-card p-4">
-                                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                          Overall Scores
-                                        </p>
-
-                                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                                          <div className="rounded-md border border-red-900/20 p-3">
-                                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                                              {pred.boxerAName}
-                                            </p>
-                                            <p className="mt-1 font-display text-lg font-bold text-red-400">
-                                              {snapshot?.overallScores?.boxerA?.toFixed?.(2) ?? "N/A"}
-                                            </p>
-                                          </div>
-
-                                          <div className="rounded-md border border-yellow-300/20 p-3">
-                                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                                              {pred.boxerBName}
-                                            </p>
-                                            <p className="mt-1 font-display text-lg font-bold text-yellow-300">
-                                              {snapshot?.overallScores?.boxerB?.toFixed?.(2) ?? "N/A"}
-                                            </p>
-                                          </div>
-
-                                          <div className="rounded-md border border-sky-300/20 p-3 sm:col-span-2">
-                                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                                              Perfect Boxer
-                                            </p>
-                                            <p className="mt-1 font-display text-lg font-bold text-sky-300">
-                                              {snapshot?.overallScores?.perfectBoxer?.toFixed?.(2) ?? "N/A"}
-                                            </p>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    <div className="grid gap-4 lg:grid-cols-3">
-                                      <div className="rounded-lg border border-border bg-card p-4">
-                                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                          Category Scores — {pred.boxerAName}
-                                        </p>
-                                        <div className="mt-3 space-y-2 text-sm">
-                                          <p><strong>Physical:</strong> {boxerACategory?.physical?.toFixed?.(2) ?? "N/A"}</p>
-                                          <p><strong>Technical:</strong> {boxerACategory?.technical?.toFixed?.(2) ?? "N/A"}</p>
-                                          <p><strong>Tactical:</strong> {boxerACategory?.tactical?.toFixed?.(2) ?? "N/A"}</p>
-                                          <p><strong>Experience:</strong> {boxerACategory?.experience?.toFixed?.(2) ?? "N/A"}</p>
-                                          <p><strong>Psychological:</strong> {boxerACategory?.psychological?.toFixed?.(2) ?? "N/A"}</p>
-                                        </div>
-                                      </div>
-
-                                      <div className="rounded-lg border border-border bg-card p-4">
-                                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                          Category Scores — {pred.boxerBName}
-                                        </p>
-                                        <div className="mt-3 space-y-2 text-sm">
-                                          <p><strong>Physical:</strong> {boxerBCategory?.physical?.toFixed?.(2) ?? "N/A"}</p>
-                                          <p><strong>Technical:</strong> {boxerBCategory?.technical?.toFixed?.(2) ?? "N/A"}</p>
-                                          <p><strong>Tactical:</strong> {boxerBCategory?.tactical?.toFixed?.(2) ?? "N/A"}</p>
-                                          <p><strong>Experience:</strong> {boxerBCategory?.experience?.toFixed?.(2) ?? "N/A"}</p>
-                                          <p><strong>Psychological:</strong> {boxerBCategory?.psychological?.toFixed?.(2) ?? "N/A"}</p>
-                                        </div>
-                                      </div>
-
-                                      <div className="rounded-lg border border-border bg-card p-4">
-                                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                          Category Scores — Perfect Boxer
-                                        </p>
-                                        <div className="mt-3 space-y-2 text-sm">
-                                          <p><strong>Physical:</strong> {perfectCategory?.physical?.toFixed?.(2) ?? "N/A"}</p>
-                                          <p><strong>Technical:</strong> {perfectCategory?.technical?.toFixed?.(2) ?? "N/A"}</p>
-                                          <p><strong>Tactical:</strong> {perfectCategory?.tactical?.toFixed?.(2) ?? "N/A"}</p>
-                                          <p><strong>Experience:</strong> {perfectCategory?.experience?.toFixed?.(2) ?? "N/A"}</p>
-                                          <p><strong>Psychological:</strong> {perfectCategory?.psychological?.toFixed?.(2) ?? "N/A"}</p>
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    <div className="rounded-lg border border-border bg-card p-4">
-                                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                        AI Explanation
-                                      </p>
-                                      <p className="mt-3 whitespace-pre-line text-sm text-muted-foreground">
-                                        {pred.aiExplanation}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </td>
-                              </tr>
-                          )}
-                        </>
-                    )
-                  })}
+                  {filtered.map((pred) => (
+                      <PredictionHistoryRow
+                          key={pred.id}
+                          pred={pred}
+                          isExpanded={expandedId === pred.id}
+                          loggedIn={loggedIn}
+                          editingId={editingId}
+                          editMatchWinner={editMatchWinner}
+                          editMatchWinMethod={editMatchWinMethod}
+                          savingUpdate={savingUpdate}
+                          deletingId={deletingId}
+                          onToggleExpand={(id) =>
+                              setExpandedId(expandedId === id ? null : id)
+                          }
+                          getPredictedWinnerTextClass={getPredictedWinnerTextClass}
+                          getStatusBadgeClass={getStatusBadgeClass}
+                          getAllowedMethods={getAllowedMethods}
+                          isValidWinnerMethodCombo={isValidWinnerMethodCombo}
+                          startEditing={startEditing}
+                          setEditMatchWinner={setEditMatchWinner}
+                          setEditMatchWinMethod={setEditMatchWinMethod}
+                          saveUpdate={saveUpdate}
+                          cancelEditing={cancelEditing}
+                          deletePrediction={deletePrediction}
+                      />
+                  ))}
                   </tbody>
                 </table>
               </div>
