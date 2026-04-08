@@ -377,7 +377,7 @@ export default function DashboardPage() {
         icon: Database,
         color: "text-accent",
         bg: "bg-accent/10",
-        title: "Boxer Database",
+        title: "Ranked Boxers",
         desc: "Browse ranked fighters",
       })
     }

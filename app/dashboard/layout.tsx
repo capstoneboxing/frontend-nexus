@@ -67,7 +67,7 @@ function SidebarLogo({ collapsed }: { collapsed: boolean }) {
                 <Trophy className="size-3.5 text-sidebar-primary-foreground" />
             </div>
             <span className="font-display text-base font-bold tracking-tight text-sidebar-foreground">
-        BOX PREDICT
+        BOXPREDICT
       </span>
         </Link>
     )

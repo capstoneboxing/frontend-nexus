@@ -253,13 +253,18 @@ wᵢ = W_category / n,  with n being the number of attributes for that category`
               </div>
             </AccordionTrigger>
 
-            <AccordionContent className="pb-5 space-y-4 text-sm text-muted-foreground">
+            <AccordionContent className="pb-5 space-y-4 text-sm text-muted-foreground whitespace-pre-line">
               <FormulaCard
-                  title="Closeness Formula"
-                  formula={`distance = Σ | Cᵢ (fighter) - Cᵢ (perfect) |
+                  title="Closeness Calculation"
+                  formula={`distance = Σ | Cᵢ(fighter) - Cᵢ(perfect) |
 
-closeness = 1 - (distance / Σ Wᵢ)`}
-                  description="Measures similarity to the perfect boxer."
+closeness = 1 - (distance / totalWeight)`}
+                  description={`Cᵢ = category score (Physical, Technical, Tactical, Psychological, Experience)
+totalWeight = sum of all category weights
+
+Closeness ranges from 0 to 1:
+- 1 → identical to perfect boxer
+- 0 → completely different`}
               />
             </AccordionContent>
           </AccordionItem>
@@ -273,13 +278,22 @@ closeness = 1 - (distance / Σ Wᵢ)`}
               </div>
             </AccordionTrigger>
 
-            <AccordionContent className="pb-5 space-y-4 text-sm text-muted-foreground">
+            <AccordionContent className="pb-5 space-y-4 text-sm text-muted-foreground whitespace-pre-line">
               <FormulaCard
-                  title="Probability"
-                  formula={`adjusted = closeness^3
+                  title="Win Probability Calculation"
+                  formula={`adjustedA = closenessA³
+adjustedB = closenessB³
 
-P(A) = A / (A + B)`}
-                  description="Higher closeness leads to higher win probability."
+P(A) = adjustedA / (adjustedA + adjustedB)
+P(B) = adjustedB / (adjustedA + adjustedB)`}
+                  description={`closenessA, closenessB = closeness scores for each fighter.
+
+The exponent (³) increases separation between fighters:
+- small differences become more meaningful
+- stronger fighter gains higher probability
+
+Final probabilities are normalized so:
+P(A) + P(B) = 1`}
               />
             </AccordionContent>
           </AccordionItem>

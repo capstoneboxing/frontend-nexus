@@ -86,9 +86,9 @@ export default function LandingPage() {
           </h1>
 
           <p className="mx-auto mt-6 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground md:text-lg">
-            A data-driven prediction tool based on fighter attributes,
-            performance metrics, and a theoretical perfect boxer model.
-            Analyze, compare, and predict with precision.
+            A data-driven boxing prediction tool built around weight-class-specific
+            perfect boxer benchmarks, normalized fighter attributes, category scoring,
+            closeness analysis, and probability-based outcomes.
           </p>
 
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -116,26 +116,26 @@ export default function LandingPage() {
           <div className="mx-auto mt-16 grid max-w-3xl grid-cols-3 gap-6 rounded-xl border border-border bg-card/50 p-6 backdrop-blur-sm">
             <div>
               <p className="font-display text-2xl font-bold text-primary md:text-3xl">
-                80.2%
+                5
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Model Accuracy
+                Attribute Categories
               </p>
             </div>
             <div>
               <p className="font-display text-2xl font-bold text-accent md:text-3xl">
-                1,200+
+                32
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Fights Analyzed
+                Fighter Attributes
               </p>
             </div>
             <div>
               <p className="font-display text-2xl font-bold text-foreground md:text-3xl">
-                20
+                AI + Math
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Performance Attributes
+                Benchmark & Prediction Logic
               </p>
             </div>
           </div>
@@ -151,7 +151,7 @@ export default function LandingPage() {
             </p>
             <h2 className="font-display text-3xl font-bold text-foreground md:text-4xl">
               <span className="text-balance">
-                Built for Serious Fight Analysis
+                Built for Structured Boxing Prediction
               </span>
             </h2>
           </div>
@@ -160,43 +160,43 @@ export default function LandingPage() {
             {[
               {
                 icon: BarChart3,
-                title: "Attribute-Based Analysis",
+                title: "32-Attribute Fighter Profiles",
                 description:
-                  "20 weighted attributes across 5 categories — from anthropometrics and performance metrics to tactical intelligence and psychological traits.",
-              },
-              {
-                icon: Target,
-                title: "Weighted Performance Scoring",
-                description:
-                  "Each attribute is scientifically weighted based on its impact on real-world fight outcomes.",
+                    "Evaluate fighters using physical, technical, tactical, psychological, and experience-based attributes.",
               },
               {
                 icon: Brain,
-                title: "Probability-Based Predictions",
+                title: "AI-Generated Boxer Profiles",
                 description:
-                  "Sigmoid-based probability models convert performance differences into win/loss/draw odds.",
+                    "Generate boxer profiles and top-ranked boxer lists by weight class to support analysis and benchmarking.",
               },
               {
                 icon: Activity,
-                title: "Perfect Boxer Benchmark",
+                title: "Perfect Boxer Benchmarks",
                 description:
-                  "Compare any fighter against the theoretical perfect boxer model to identify strengths and weaknesses.",
+                    "Each weight class has its own perfect boxer, built by averaging the attributes of AI-generated top-ranked fighters in that division.",
+              },
+              {
+                icon: Target,
+                title: "Closeness & Probability Analysis",
+                description:
+                    "Compare fighters to the perfect boxer using normalized category scores, closeness calculations, and probability-based predictions.",
               },
             ].map((feature) => (
-              <div
-                key={feature.title}
-                className="group rounded-xl border border-border bg-card p-6 transition-colors hover:border-primary/30"
-              >
-                <div className="mb-4 inline-flex rounded-lg bg-primary/10 p-2.5">
-                  <feature.icon className="size-5 text-primary" />
+                <div
+                    key={feature.title}
+                    className="group rounded-xl border border-border bg-card p-6 transition-colors hover:border-primary/30"
+                >
+                  <div className="mb-4 inline-flex rounded-lg bg-primary/10 p-2.5">
+                    <feature.icon className="size-5 text-primary" />
+                  </div>
+                  <h3 className="mb-2 text-sm font-semibold text-foreground">
+                    {feature.title}
+                  </h3>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    {feature.description}
+                  </p>
                 </div>
-                <h3 className="mb-2 text-sm font-semibold text-foreground">
-                  {feature.title}
-                </h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {feature.description}
-                </p>
-              </div>
             ))}
           </div>
         </div>
@@ -218,47 +218,47 @@ export default function LandingPage() {
             {[
               {
                 step: "01",
-                title: "The Perfect Boxer Model",
+                title: "Generate Top Ranked Boxers by Weight Class",
                 description:
-                  "We define a theoretical perfect boxer with maximum scores (10/10) across all 20 performance attributes in 5 categories. This serves as the upper-bound benchmark for evaluating real fighters.",
+                    "The system uses AI to generate top-ranked boxers for a selected weight class, along with structured attribute values for each fighter.",
               },
               {
                 step: "02",
-                title: "Weighted Attribute Scoring",
+                title: "Build the Perfect Boxer",
                 description:
-                  "Attributes are grouped into 5 categories — Performance Metrics (35%), Technical (22%), Tactical (16%), Anthropometric (15%), Psychological (12%) — each weighted by fight-outcome impact.",
+                    "A perfect boxer is created for that weight class by averaging the attributes of those top-ranked fighters, producing a benchmark based on real boxing profiles rather than an abstract maximum.",
               },
               {
                 step: "03",
-                title: "Performance Score Calculation",
+                title: "Normalize and Score Attributes",
                 description:
-                  "A fighter's overall score is computed as the weighted sum of their attribute ratings, producing a single comparable metric out of 10.",
+                    "Fighter attributes are normalized by type, grouped into five categories, and combined into category and overall scores for fair comparison.",
               },
               {
                 step: "04",
-                title: "Probabilistic Outcome Prediction",
+                title: "Compare Closeness and Predict Outcome",
                 description:
-                  "Score differences between two fighters are fed through a sigmoid function to produce win probabilities, with a base draw probability accounting for close matchups.",
+                    "Each fighter is compared to the perfect boxer using closeness calculations. Those closeness values are then converted into win probabilities for the final match prediction.",
               },
             ].map((item) => (
-              <div
-                key={item.step}
-                className="flex gap-6 rounded-xl border border-border bg-card p-6"
-              >
-                <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <span className="font-display text-lg font-bold text-primary">
-                    {item.step}
-                  </span>
+                <div
+                    key={item.step}
+                    className="flex gap-6 rounded-xl border border-border bg-card p-6"
+                >
+                  <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                    <span className="font-display text-lg font-bold text-primary">
+                      {item.step}
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="mb-1 font-semibold text-foreground">
+                      {item.title}
+                    </h3>
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      {item.description}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="mb-1 font-semibold text-foreground">
-                    {item.title}
-                  </h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    {item.description}
-                  </p>
-                </div>
-              </div>
             ))}
           </div>
         </div>
@@ -273,7 +273,7 @@ export default function LandingPage() {
                 <Trophy className="size-3.5 text-primary-foreground" />
               </div>
               <span className="font-display text-lg font-bold tracking-tight text-foreground">
-                BOX PREDICT
+                BOXPREDICT
               </span>
             </div>
 
