@@ -65,7 +65,7 @@ function getSliderConfig(key: keyof BoxerAttributes, value: number) {
   return {
     min: 1,
     max: 10,
-    step: 1,
+    step: 0.1,
     displayValue: `${value}`,
   }
 }
