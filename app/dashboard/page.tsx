@@ -269,7 +269,8 @@ function buildAttributeSummaryRows(
 }
 
 export default function DashboardPage() {
-  const loggedIn = isLoggedIn()
+  const [mounted, setMounted] = useState(false)
+  const loggedIn = mounted ? isLoggedIn() : false
 
   const [predictions, setPredictions] = useState<DashboardPrediction[]>([])
   const [weightClasses, setWeightClasses] = useState<WeightClassResponse[]>([])
@@ -281,6 +282,12 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!mounted) return
+
     async function fetchData() {
       try {
         setLoading(true)
@@ -318,7 +325,7 @@ export default function DashboardPage() {
     }
 
     void fetchData()
-  }, [])
+  }, [mounted])
 
   const recent = useMemo(() => predictions.slice(0, 4), [predictions])
 
@@ -377,6 +384,10 @@ export default function DashboardPage() {
 
     return items
   }, [loggedIn, predictions.length])
+
+  if (!mounted) {
+    return null
+  }
 
   return (
       <div className="space-y-6">

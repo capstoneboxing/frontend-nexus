@@ -10,7 +10,8 @@ import {
     RotateCw,
     Search,
     Trophy,
-    WandSparkles, X,
+    WandSparkles,
+    X,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -23,7 +24,8 @@ import type {
     PerfectBoxerResponse,
     WeightClassResponse,
 } from "@/generated-api/models"
-import {appToast} from "@/lib/toast";
+import { appToast } from "@/lib/toast"
+import React from "react"
 
 type PerfectBoxerTableRow = {
     perfectBoxerId: number
@@ -139,10 +141,12 @@ function mapPerfectBoxerToRow(
 }
 
 export default function PerfectBoxerPage() {
-    const loggedIn = isLoggedIn()
+    const [mounted, setMounted] = useState(false)
+    const loggedIn = mounted ? isLoggedIn() : false
 
     const [rows, setRows] = useState<PerfectBoxerTableRow[]>([])
     const [weightClasses, setWeightClasses] = useState<WeightClassResponse[]>([])
+    const [weightOrderMap, setWeightOrderMap] = useState<Record<number, number>>({})
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
     const [search, setSearch] = useState("")
@@ -160,6 +164,21 @@ export default function PerfectBoxerPage() {
     const [batchStatus, setBatchStatus] =
         useState<PerfectBoxerBatchStatusResponse | null>(null)
 
+    useEffect(() => {
+        setMounted(true)
+    }, [])
+
+    function sortRowsByWeightClass(data: PerfectBoxerTableRow[]) {
+        return [...data].sort((a, b) => {
+            const weightA =
+                a.weightClassId != null ? weightOrderMap[a.weightClassId] ?? 0 : 0
+            const weightB =
+                b.weightClassId != null ? weightOrderMap[b.weightClassId] ?? 0 : 0
+
+            return weightA - weightB || a.weightClassName.localeCompare(b.weightClassName)
+        })
+    }
+
     async function fetchAll(isRefresh = false) {
         try {
             if (isRefresh) {
@@ -175,15 +194,29 @@ export default function PerfectBoxerPage() {
 
             setWeightClasses(weightClassesData)
 
+            const nextWeightOrderMap = Object.fromEntries(
+                weightClassesData
+                    .filter((wc) => wc.weightClassId != null)
+                    .map((wc) => [wc.weightClassId as number, wc.minWeightLb ?? 0])
+            )
+            setWeightOrderMap(nextWeightOrderMap)
+
             const weightClassMap = Object.fromEntries(
-                (weightClassesData as WeightClassResponse[])
+                weightClassesData
                     .filter((wc) => wc.weightClassId != null)
                     .map((wc) => [wc.weightClassId as number, wc.className ?? "Unknown"])
             )
 
             const mapped = perfectBoxers
                 .map((item) => mapPerfectBoxerToRow(item, weightClassMap))
-                .sort((a, b) => a.weightClassName.localeCompare(b.weightClassName))
+                .sort((a, b) => {
+                    const weightA =
+                        a.weightClassId != null ? nextWeightOrderMap[a.weightClassId] ?? 0 : 0
+                    const weightB =
+                        b.weightClassId != null ? nextWeightOrderMap[b.weightClassId] ?? 0 : 0
+
+                    return weightA - weightB || a.weightClassName.localeCompare(b.weightClassName)
+                })
 
             setRows(mapped)
 
@@ -202,16 +235,15 @@ export default function PerfectBoxerPage() {
     }
 
     useEffect(() => {
+        if (!mounted) return
         void fetchAll()
-    }, [])
+    }, [mounted])
 
     const filteredRows = useMemo(() => {
         const q = search.trim().toLowerCase()
         if (!q) return rows
 
-        return rows.filter((row) =>
-            row.weightClassName.toLowerCase().includes(q)
-        )
+        return rows.filter((row) => row.weightClassName.toLowerCase().includes(q))
     }, [rows, search])
 
     async function handleGeneratePerfectBoxer() {
@@ -276,8 +308,8 @@ export default function PerfectBoxerPage() {
             })
 
             setRows((prev) =>
-                prev
-                    .map((item) =>
+                sortRowsByWeightClass(
+                    prev.map((item) =>
                         item.weightClassId === row.weightClassId
                             ? {
                                 ...item,
@@ -338,7 +370,7 @@ export default function PerfectBoxerPage() {
                             }
                             : item
                     )
-                    .sort((a, b) => a.weightClassName.localeCompare(b.weightClassName))
+                )
             )
 
             appToast.success(`Successfully recalculated perfect boxer for ${row.weightClassName}`)
@@ -358,6 +390,10 @@ export default function PerfectBoxerPage() {
             <p className="mt-1 text-sm font-medium text-foreground">{value}</p>
         </div>
     )
+
+    if (!mounted) {
+        return null
+    }
 
     return (
         <div className="space-y-6">
@@ -600,9 +636,8 @@ export default function PerfectBoxerPage() {
                                 const isExpanded = expandedId === row.perfectBoxerId
 
                                 return (
-                                    <>
+                                    <React.Fragment key={row.perfectBoxerId}>
                                         <tr
-                                            key={row.perfectBoxerId}
                                             className={`cursor-pointer border-l-4 transition-colors ${
                                                 isExpanded
                                                     ? "border-l-primary bg-secondary/20"
@@ -734,12 +769,12 @@ export default function PerfectBoxerPage() {
                                                                     Physical
                                                                 </p>
                                                                 <div className="mt-3 space-y-2 text-sm">
-                                                                    <p><strong>Weight Class Alignment:</strong> {row.weightClassAlignment.toFixed(2)}</p>
-                                                                    <p><strong>Hand Speed:</strong> {row.handSpeed.toFixed(2)}</p>
-                                                                    <p><strong>Foot Speed:</strong> {row.footSpeed.toFixed(2)}</p>
-                                                                    <p><strong>Strength:</strong> {row.strength.toFixed(2)}</p>
-                                                                    <p><strong>Endurance:</strong> {row.endurance.toFixed(2)}</p>
-                                                                    <p><strong>Reaction Time:</strong> {row.reactionTime.toFixed(2)}</p>
+                                                                    <p><strong>Weight Class Alignment:</strong> {row.weightClassAlignment.toFixed(1)}</p>
+                                                                    <p><strong>Hand Speed:</strong> {row.handSpeed.toFixed(1)}</p>
+                                                                    <p><strong>Foot Speed:</strong> {row.footSpeed.toFixed(1)}</p>
+                                                                    <p><strong>Strength:</strong> {row.strength.toFixed(1)}</p>
+                                                                    <p><strong>Endurance:</strong> {row.endurance.toFixed(1)}</p>
+                                                                    <p><strong>Reaction Time:</strong> {row.reactionTime.toFixed(1)}</p>
                                                                 </div>
                                                             </div>
 
@@ -748,13 +783,13 @@ export default function PerfectBoxerPage() {
                                                                     Technical
                                                                 </p>
                                                                 <div className="mt-3 space-y-2 text-sm">
-                                                                    <p><strong>Punch Accuracy:</strong> {row.punchAccuracy.toFixed(2)}</p>
-                                                                    <p><strong>Punch Variety:</strong> {row.punchVariety.toFixed(2)}</p>
-                                                                    <p><strong>Defensive Guard Efficiency:</strong> {row.defensiveGuardEfficiency.toFixed(2)}</p>
-                                                                    <p><strong>Head Movement:</strong> {row.headMovement.toFixed(2)}</p>
-                                                                    <p><strong>Footwork Technique:</strong> {row.footworkTechnique.toFixed(2)}</p>
-                                                                    <p><strong>Counterpunching Ability:</strong> {row.counterpunchingAbility.toFixed(2)}</p>
-                                                                    <p><strong>Combination Efficiency:</strong> {row.combinationEfficiency.toFixed(2)}</p>
+                                                                    <p><strong>Punch Accuracy:</strong> {row.punchAccuracy.toFixed(1)}</p>
+                                                                    <p><strong>Punch Variety:</strong> {row.punchVariety.toFixed(1)}</p>
+                                                                    <p><strong>Defensive Guard Efficiency:</strong> {row.defensiveGuardEfficiency.toFixed(1)}</p>
+                                                                    <p><strong>Head Movement:</strong> {row.headMovement.toFixed(1)}</p>
+                                                                    <p><strong>Footwork Technique:</strong> {row.footworkTechnique.toFixed(1)}</p>
+                                                                    <p><strong>Counterpunching Ability:</strong> {row.counterpunchingAbility.toFixed(1)}</p>
+                                                                    <p><strong>Combination Efficiency:</strong> {row.combinationEfficiency.toFixed(1)}</p>
                                                                 </div>
                                                             </div>
 
@@ -763,12 +798,12 @@ export default function PerfectBoxerPage() {
                                                                     Tactical
                                                                 </p>
                                                                 <div className="mt-3 space-y-2 text-sm">
-                                                                    <p><strong>Ring IQ:</strong> {row.ringIq.toFixed(2)}</p>
-                                                                    <p><strong>Adaptability Mid-Fight:</strong> {row.adaptabilityMidFight.toFixed(2)}</p>
-                                                                    <p><strong>Distance Control:</strong> {row.distanceControl.toFixed(2)}</p>
-                                                                    <p><strong>Tempo Control:</strong> {row.tempoControl.toFixed(2)}</p>
-                                                                    <p><strong>Opponent Pattern Recognition:</strong> {row.opponentPatternRecognition.toFixed(2)}</p>
-                                                                    <p><strong>Fight Planning Discipline:</strong> {row.fightPlanningDiscipline.toFixed(2)}</p>
+                                                                    <p><strong>Ring IQ:</strong> {row.ringIq.toFixed(1)}</p>
+                                                                    <p><strong>Adaptability Mid-Fight:</strong> {row.adaptabilityMidFight.toFixed(1)}</p>
+                                                                    <p><strong>Distance Control:</strong> {row.distanceControl.toFixed(1)}</p>
+                                                                    <p><strong>Tempo Control:</strong> {row.tempoControl.toFixed(1)}</p>
+                                                                    <p><strong>Opponent Pattern Recognition:</strong> {row.opponentPatternRecognition.toFixed(1)}</p>
+                                                                    <p><strong>Fight Planning Discipline:</strong> {row.fightPlanningDiscipline.toFixed(1)}</p>
                                                                 </div>
                                                             </div>
 
@@ -777,11 +812,11 @@ export default function PerfectBoxerPage() {
                                                                     Psychological
                                                                 </p>
                                                                 <div className="mt-3 space-y-2 text-sm">
-                                                                    <p><strong>Composure Under Pressure:</strong> {row.composureUnderPressure.toFixed(2)}</p>
-                                                                    <p><strong>Aggression Control:</strong> {row.aggressionControl.toFixed(2)}</p>
-                                                                    <p><strong>Mental Toughness:</strong> {row.mentalToughness.toFixed(2)}</p>
-                                                                    <p><strong>Focus Consistency:</strong> {row.focusConsistency.toFixed(2)}</p>
-                                                                    <p><strong>Resilience After Knockdown:</strong> {row.resilienceAfterKnockdown.toFixed(2)}</p>
+                                                                    <p><strong>Composure Under Pressure:</strong> {row.composureUnderPressure.toFixed(1)}</p>
+                                                                    <p><strong>Aggression Control:</strong> {row.aggressionControl.toFixed(1)}</p>
+                                                                    <p><strong>Mental Toughness:</strong> {row.mentalToughness.toFixed(1)}</p>
+                                                                    <p><strong>Focus Consistency:</strong> {row.focusConsistency.toFixed(1)}</p>
+                                                                    <p><strong>Resilience After Knockdown:</strong> {row.resilienceAfterKnockdown.toFixed(1)}</p>
                                                                 </div>
                                                             </div>
 
@@ -790,10 +825,10 @@ export default function PerfectBoxerPage() {
                                                                     Experience
                                                                 </p>
                                                                 <div className="mt-3 space-y-2 text-sm">
-                                                                    <p><strong>Title Fight Experience:</strong> {row.titleFightExperience.toFixed(2)}</p>
-                                                                    <p><strong>Strength Of Opposition:</strong> {row.strengthOfOpposition.toFixed(2)}</p>
-                                                                    <p><strong>Recent Fight Activity:</strong> {row.recentFightActivity.toFixed(2)}</p>
-                                                                    <p><strong>Performance Consistency:</strong> {row.performanceConsistency.toFixed(2)}</p>
+                                                                    <p><strong>Title Fight Experience:</strong> {row.titleFightExperience.toFixed(1)}</p>
+                                                                    <p><strong>Strength Of Opposition:</strong> {row.strengthOfOpposition.toFixed(1)}</p>
+                                                                    <p><strong>Recent Fight Activity:</strong> {row.recentFightActivity.toFixed(1)}</p>
+                                                                    <p><strong>Performance Consistency:</strong> {row.performanceConsistency.toFixed(1)}</p>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -801,7 +836,7 @@ export default function PerfectBoxerPage() {
                                                 </td>
                                             </tr>
                                         )}
-                                    </>
+                                    </React.Fragment>
                                 )
                             })}
                             </tbody>
