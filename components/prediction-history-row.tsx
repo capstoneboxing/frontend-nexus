@@ -86,9 +86,6 @@ export function PredictionHistoryRow({
     const boxerAConfidence = snapshot?.attributeConfidence?.boxerA
     const boxerBConfidence = snapshot?.attributeConfidence?.boxerB
 
-    const snapshotProbabilityA = snapshot?.probabilities?.boxerA
-    const snapshotProbabilityB = snapshot?.probabilities?.boxerB
-
     return (
         <>
             <tr
@@ -285,7 +282,7 @@ export function PredictionHistoryRow({
                             <div className="grid gap-4 md:grid-cols-2">
                                 <div className="rounded-lg border border-border bg-card p-4">
                                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                        Closeness & Probabilities
+                                        Closeness & Confidence
                                     </p>
 
                                     <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -295,6 +292,15 @@ export function PredictionHistoryRow({
                                             </p>
                                             <p className="mt-1 font-display text-lg font-bold text-red-400">
                                                 {boxerABaseCloseness?.toFixed?.(2) ?? "N/A"}
+                                            </p>
+                                        </div>
+
+                                        <div className="rounded-md border border-yellow-300/20 p-3">
+                                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                                                {pred.boxerBName} Base Closeness
+                                            </p>
+                                            <p className="mt-1 font-display text-lg font-bold text-yellow-300">
+                                                {boxerBBaseCloseness?.toFixed?.(2) ?? "N/A"}
                                             </p>
                                         </div>
 
@@ -310,55 +316,11 @@ export function PredictionHistoryRow({
 
                                         <div className="rounded-md border border-yellow-300/20 p-3">
                                             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                                                {pred.boxerBName} Base Closeness
-                                            </p>
-                                            <p className="mt-1 font-display text-lg font-bold text-yellow-300">
-                                                {boxerBBaseCloseness?.toFixed?.(2) ?? "N/A"}
-                                            </p>
-                                        </div>
-
-                                        <div className="rounded-md border border-yellow-300/20 p-3">
-                                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
                                                 {pred.boxerBName} Adjusted Closeness
                                             </p>
                                             <p className="mt-1 font-display text-lg font-bold text-yellow-300">
                                                 {boxerBAdjustedCloseness?.toFixed?.(2) ??
                                                     pred.boxerBClosenessScore.toFixed(2)}
-                                            </p>
-                                        </div>
-
-                                        <div className="rounded-md border border-red-900/20 p-3">
-                                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                                                {pred.boxerAName} Probability
-                                            </p>
-                                            <p className="mt-1 font-display text-lg font-bold text-red-400">
-                                                {((snapshotProbabilityA ?? pred.probabilityA) * 100).toFixed(0)}%
-                                            </p>
-                                        </div>
-
-                                        <div className="rounded-md border border-yellow-300/20 p-3">
-                                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                                                {pred.boxerBName} Probability
-                                            </p>
-                                            <p className="mt-1 font-display text-lg font-bold text-yellow-300">
-                                                {((snapshotProbabilityB ?? pred.probabilityB) * 100).toFixed(0)}%
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="rounded-lg border border-border bg-card p-4">
-                                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                        Overall Scores & Confidence
-                                    </p>
-
-                                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                                        <div className="rounded-md border border-red-900/20 p-3">
-                                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                                                {pred.boxerAName} Overall Score
-                                            </p>
-                                            <p className="mt-1 font-display text-lg font-bold text-red-400">
-                                                {snapshot?.overallScores?.boxerA?.toFixed?.(2) ?? "N/A"}
                                             </p>
                                         </div>
 
@@ -376,15 +338,6 @@ export function PredictionHistoryRow({
 
                                         <div className="rounded-md border border-yellow-300/20 p-3">
                                             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                                                {pred.boxerBName} Overall Score
-                                            </p>
-                                            <p className="mt-1 font-display text-lg font-bold text-yellow-300">
-                                                {snapshot?.overallScores?.boxerB?.toFixed?.(2) ?? "N/A"}
-                                            </p>
-                                        </div>
-
-                                        <div className="rounded-md border border-yellow-300/20 p-3">
-                                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
                                                 {pred.boxerBName} Confidence
                                             </p>
                                             <p className="mt-1 flex items-center gap-1 font-display text-lg font-bold text-yellow-300">
@@ -394,8 +347,34 @@ export function PredictionHistoryRow({
                                                     : "N/A"}
                                             </p>
                                         </div>
+                                    </div>
+                                </div>
 
-                                        <div className="rounded-md border border-sky-300/20 p-3 sm:col-span-2">
+                                <div className="rounded-lg border border-border bg-card p-4">
+                                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                        Overall Scores
+                                    </p>
+
+                                    <div className="mt-2 grid grid-cols-1 gap-3">
+                                        <div className="rounded-md border border-red-900/20 p-3">
+                                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                                                {pred.boxerAName} Overall Score
+                                            </p>
+                                            <p className="mt-1 font-display text-lg font-bold text-red-400">
+                                                {snapshot?.overallScores?.boxerA?.toFixed?.(2) ?? "N/A"}
+                                            </p>
+                                        </div>
+
+                                        <div className="rounded-md border border-yellow-300/20 p-3">
+                                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                                                {pred.boxerBName} Overall Score
+                                            </p>
+                                            <p className="mt-1 font-display text-lg font-bold text-yellow-300">
+                                                {snapshot?.overallScores?.boxerB?.toFixed?.(2) ?? "N/A"}
+                                            </p>
+                                        </div>
+
+                                        <div className="rounded-md border border-sky-300/20 p-3">
                                             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
                                                 Perfect Boxer Overall Score
                                             </p>
