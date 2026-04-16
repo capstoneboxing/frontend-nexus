@@ -12,7 +12,10 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useAuthGuard } from "@/hooks/useAuthGuard"
-import { allTimeRankedBoxersApi, weightClassesApi } from "@/lib/api-client"
+import {
+  fetchWeightClasses,
+  fetchAllActiveRankedBoxers,
+} from "@/lib/api"
 import { isLoggedIn } from "@/lib/auth"
 import {
   mapAllTimeRankedBoxerToFormValues,
@@ -73,8 +76,8 @@ export default function BoxersPage() {
       setError(null)
 
       const [weightClassData, boxerData] = await Promise.all([
-        weightClassesApi.getWeightClasses(),
-        allTimeRankedBoxersApi.getAllActive(),
+        fetchWeightClasses(),
+        fetchAllActiveRankedBoxers(),
       ])
 
       setWeightClasses(weightClassData)
@@ -159,7 +162,7 @@ export default function BoxersPage() {
             Top All Time Ranked Boxers
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Browse to app time ranked boxer profiles, compare and edit attributes.
+            Browse all-time ranked boxer profiles, compare them, and edit attributes.
           </p>
         </div>
 

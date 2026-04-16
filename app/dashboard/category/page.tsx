@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useAuthGuard } from "@/hooks/useAuthGuard"
-import { categoryWeightsApi, weightClassesApi } from "@/lib/api-client"
+import { fetchWeightClasses, fetchCategoryWeights, updateCategoryWeightByWeightClassId } from "@/lib/api"
 import { appToast } from "@/lib/toast"
 import type {
   CategoryWeightResponse,
@@ -145,8 +145,8 @@ export default function CriteriaPage() {
         setPageLoading(true)
 
         const [classes, categoryWeights] = await Promise.all([
-          weightClassesApi.getWeightClasses(),
-          categoryWeightsApi.getAll(),
+          fetchWeightClasses(),
+          fetchCategoryWeights(),
         ])
 
         setWeightClasses(classes)
@@ -238,10 +238,10 @@ export default function CriteriaPage() {
     try {
       setSaving(true)
 
-      const updated = await categoryWeightsApi.updateByWeightClassId({
-        weightClassId: Number(selectedWeightClassId),
-        categoryWeightUpdateRequest: formToRequest(form),
-      })
+      const updated = await updateCategoryWeightByWeightClassId(
+          Number(selectedWeightClassId),
+          formToRequest(form)
+      )
 
       const mapped = responseToForm(updated)
       setForm(mapped)

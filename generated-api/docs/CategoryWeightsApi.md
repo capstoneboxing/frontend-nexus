@@ -68,9 +68,9 @@ This endpoint does not need any parameter.
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **401** | Authentication required |  -  |
-| **200** | Category weights retrieved successfully |  -  |
 | **403** | Access denied |  -  |
+| **200** | Category weights retrieved successfully |  -  |
+| **401** | Authentication required |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
@@ -135,16 +135,16 @@ example().catch(console.error);
 ### HTTP request headers
 
 - **Content-Type**: Not defined
-- **Accept**: `*/*`, `application/json`
+- **Accept**: `application/json`, `*/*`
 
 
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
+| **403** | Access denied |  -  |
+| **200** | Category weights retrieved successfully |  -  |
 | **404** | Category weights not found |  -  |
 | **401** | Authentication required |  -  |
-| **200** | Category weights retrieved successfully |  -  |
-| **403** | Access denied |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
@@ -212,16 +212,16 @@ example().catch(console.error);
 ### HTTP request headers
 
 - **Content-Type**: `application/json`
-- **Accept**: `*/*`, `application/json`
+- **Accept**: `application/json`, `*/*`
 
 
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
+| **403** | Access denied |  -  |
+| **200** | Category weights updated successfully |  -  |
 | **404** | Category weights not found |  -  |
 | **401** | Authentication required |  -  |
-| **200** | Category weights updated successfully |  -  |
-| **403** | Access denied |  -  |
 | **400** | Invalid request or weights do not add up to 1.0 |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)

@@ -1,4 +1,3 @@
-.openapi-generator-ignore
 apis/AllTimeRankedBoxersApi.ts
 apis/AuthenticationApi.ts
 apis/CategoryWeightsApi.ts
@@ -21,8 +20,8 @@ docs/BoxerProfileLookupFailureResponse.md
 docs/CategoryWeightResponse.md
 docs/CategoryWeightUpdateRequest.md
 docs/CategoryWeightsApi.md
-docs/GenerateBoxerProfileRequest.md
-docs/GeneratedBoxerProfileResponse.md
+docs/GenerateBoxerRequest.md
+docs/GeneratedBoxerResponse.md
 docs/MatchPredictionApi.md
 docs/PerfectBoxerBatchStatusResponse.md
 docs/PerfectBoxerGenerationRequest.md
@@ -48,8 +47,8 @@ models/BoxerInput.ts
 models/BoxerProfileLookupFailureResponse.ts
 models/CategoryWeightResponse.ts
 models/CategoryWeightUpdateRequest.ts
-models/GenerateBoxerProfileRequest.ts
-models/GeneratedBoxerProfileResponse.ts
+models/GenerateBoxerRequest.ts
+models/GeneratedBoxerResponse.ts
 models/PerfectBoxerBatchStatusResponse.ts
 models/PerfectBoxerGenerationRequest.ts
 models/PerfectBoxerGenerationStartedResponse.ts

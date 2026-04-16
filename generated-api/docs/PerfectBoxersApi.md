@@ -79,12 +79,12 @@ example().catch(console.error);
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
+| **400** | Invalid request or validation failed |  -  |
 | **202** | Generation started successfully |  -  |
+| **403** | Access denied |  -  |
+| **500** | Unexpected server error |  -  |
 | **404** | Weight class not found |  -  |
 | **401** | Authentication required |  -  |
-| **500** | Unexpected server error |  -  |
-| **400** | Invalid request or validation failed |  -  |
-| **403** | Access denied |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
@@ -290,11 +290,11 @@ example().catch(console.error);
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **200** | Batch status retrieved successfully |  -  |
-| **401** | Authentication required |  -  |
 | **404** | Batch not found |  -  |
-| **500** | Unexpected server error |  -  |
+| **200** | Batch status retrieved successfully |  -  |
 | **403** | Access denied |  -  |
+| **500** | Unexpected server error |  -  |
+| **401** | Authentication required |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
@@ -437,11 +437,11 @@ example().catch(console.error);
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **200** | Perfect boxer regenerated successfully |  -  |
-| **401** | Authentication required |  -  |
-| **500** | Unexpected server error |  -  |
 | **404** | Active batch not found |  -  |
+| **200** | Perfect boxer regenerated successfully |  -  |
 | **403** | Access denied |  -  |
+| **500** | Unexpected server error |  -  |
+| **401** | Authentication required |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 

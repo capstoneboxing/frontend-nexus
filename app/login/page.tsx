@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Eye, EyeOff, Loader2, Lock, User, Swords } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { authenticationApi } from "@/lib/api-client"
+import { login } from "@/lib/api"
 import { isLoggedIn, saveAuth } from "@/lib/auth"
 
 export default function LoginPage() {
@@ -31,11 +31,9 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const data = await authenticationApi.login({
-        authRequest: {
-          username: username.trim(),
-          password,
-        },
+      const data = await login({
+        username: username.trim(),
+        password,
       })
 
       if (!data.token) {

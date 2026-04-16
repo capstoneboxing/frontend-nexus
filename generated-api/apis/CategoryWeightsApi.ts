@@ -18,7 +18,7 @@ import type {
   ApiErrorResponse,
   CategoryWeightResponse,
   CategoryWeightUpdateRequest,
-} from '../models';
+} from '../models/index';
 import {
     ApiErrorResponseFromJSON,
     ApiErrorResponseToJSON,
@@ -26,7 +26,7 @@ import {
     CategoryWeightResponseToJSON,
     CategoryWeightUpdateRequestFromJSON,
     CategoryWeightUpdateRequestToJSON,
-} from '../models';
+} from '../models/index';
 
 export interface GetByWeightClassIdRequest {
     weightClassId: number;

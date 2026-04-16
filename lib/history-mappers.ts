@@ -85,7 +85,9 @@ export function mapPredictionHistoryToUI(
             : "N/A",
 
         breakdownSnapshot,
-        aiExplanation: breakdownSnapshot?.aiExplanation ?? "No explanation available.",
+        aiExplanation:
+            breakdownSnapshot?.aiExplanation ??
+            "No explanation available.",
 
         status: determineStatus(
             item.predictedWinner,

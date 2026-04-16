@@ -71,11 +71,11 @@ No authorization required
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 | **200** | Prediction generated successfully |  -  |
-| **500** | Internal server error |  -  |
 | **400** | Invalid request or validation failed |  -  |
-| **401** | Authentication required |  -  |
-| **404** | Required data not found (e.g., weight class or perfect boxer) |  -  |
 | **403** | Access denied |  -  |
+| **404** | Required data not found (e.g., weight class or perfect boxer) |  -  |
+| **401** | Authentication required |  -  |
+| **500** | Internal server error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 

@@ -11,7 +11,7 @@ import {
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { predictionHistoryApi, weightClassesApi } from "@/lib/api-client"
+import { fetchPredictionHistories, fetchWeightClasses, updatePredictionHistory, deletePredictionHistory } from "@/lib/api"
 import { isLoggedIn } from "@/lib/auth"
 import { mapPredictionHistoryToUI } from "@/lib/history-mappers"
 import type { PredictionHistoryUI } from "@/lib/history-types"
@@ -106,8 +106,8 @@ export default function HistoryPage() {
       }
 
       const [historyData, weightClassData] = await Promise.all([
-        predictionHistoryApi.getPredictionHistories(),
-        weightClassesApi.getWeightClasses(),
+        fetchPredictionHistories(),
+        fetchWeightClasses(),
       ])
 
       const wcMap = Object.fromEntries(
@@ -252,10 +252,7 @@ export default function HistoryPage() {
         matchWinMethod: editMatchWinMethod,
       }
 
-      const updated = await predictionHistoryApi.updatePredictionHistory({
-        id: pred.id,
-        predictionResultUpdateRequest: payload,
-      })
+      const updated = await updatePredictionHistory(pred.id, payload)
 
       const mapped = mapPredictionHistoryToUI(updated)
       const merged: PredictionHistoryUI = {
@@ -288,7 +285,7 @@ export default function HistoryPage() {
       setDeletingId(pred.id)
       setError(null)
 
-      await predictionHistoryApi.deletePredictionHistory({ id: pred.id })
+      await deletePredictionHistory(pred.id)
 
       setPredictions((prev) => prev.filter((p) => p.id !== pred.id))
 

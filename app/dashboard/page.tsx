@@ -22,10 +22,10 @@ import {
 import { StatsCard } from "@/components/stats-card"
 import { Button } from "@/components/ui/button"
 import {
-  allTimeRankedBoxersApi,
-  predictionHistoryApi,
-  weightClassesApi,
-} from "@/lib/api-client"
+  fetchPredictionHistories,
+    fetchWeightClasses,
+    fetchAllActiveRankedBoxers
+} from "@/lib/api"
 import { isLoggedIn } from "@/lib/auth"
 import type {
   AllTimeRankedBoxerResponse,
@@ -293,9 +293,9 @@ export default function DashboardPage() {
         setLoading(true)
 
         const [predictionData, weightClassData, activeBoxers] = await Promise.all([
-          predictionHistoryApi.getPredictionHistories(),
-          weightClassesApi.getWeightClasses(),
-          allTimeRankedBoxersApi.getAllActive(),
+          fetchPredictionHistories(),
+          fetchWeightClasses(),
+          fetchAllActiveRankedBoxers()
         ])
 
         const mappedPredictions = predictionData

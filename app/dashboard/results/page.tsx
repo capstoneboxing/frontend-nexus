@@ -10,8 +10,6 @@ import {
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
   Cell,
-  PieChart,
-  Pie,
 } from "recharts"
 import {
   ChevronRight,
@@ -21,8 +19,11 @@ import {
   Trophy,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { predictionHistoryApi } from "@/lib/api-client"
-import type { PredictionHistoryResponse } from "@/generated-api/models"
+import { fetchPredictionHistories, fetchWeightClasses } from "@/lib/api"
+import type {
+  PredictionHistoryResponse,
+  WeightClassResponse,
+} from "@/generated-api/models"
 
 const RECENT_LIMIT = 10
 
@@ -63,22 +64,38 @@ function matchupLabel(pred: PredictionHistoryResponse): string {
   return `${a} v ${b}`
 }
 
+function isResolvedPrediction(pred: PredictionHistoryResponse): boolean {
+  return pred.matchWinner != null && pred.matchWinMethod != null
+}
+
+function isCorrectPrediction(pred: PredictionHistoryResponse): boolean {
+  if (!isResolvedPrediction(pred)) return false
+  return pred.predictedWinner === pred.matchWinner
+}
+
 export default function ResultsPage() {
   const [predictions, setPredictions] = useState<PredictionHistoryResponse[]>([])
+  const [weightClasses, setWeightClasses] = useState<WeightClassResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    async function fetchPredictions() {
+    async function fetchResultsPageData() {
       try {
-        const data = await predictionHistoryApi.getPredictionHistories()
+        const [predictionData, weightClassData] = await Promise.all([
+          fetchPredictionHistories(),
+          fetchWeightClasses(),
+        ])
+
         setPredictions(
-            [...data].sort(
+            [...predictionData].sort(
                 (a, b) =>
                     (b.predictionDate?.getTime() ?? 0) -
                     (a.predictionDate?.getTime() ?? 0)
             )
         )
+
+        setWeightClasses(weightClassData)
       } catch (err) {
         console.error(err)
         setError("Failed to load results.")
@@ -87,13 +104,36 @@ export default function ResultsPage() {
       }
     }
 
-    void fetchPredictions()
+    void fetchResultsPageData()
   }, [])
+
+  const weightClassMap = useMemo(() => {
+    return Object.fromEntries(
+        weightClasses
+            .filter((wc) => wc.weightClassId != null)
+            .map((wc) => [wc.weightClassId as number, wc.className ?? "Unknown"])
+    )
+  }, [weightClasses])
 
   const recentPredictions = useMemo(
       () => predictions.slice(0, RECENT_LIMIT),
       [predictions]
   )
+
+  const resolvedPredictions = useMemo(
+      () => predictions.filter(isResolvedPrediction),
+      [predictions]
+  )
+
+  const correctPredictionsCount = useMemo(
+      () => resolvedPredictions.filter(isCorrectPrediction).length,
+      [resolvedPredictions]
+  )
+
+  const overallAccuracyRate = useMemo(() => {
+    if (!resolvedPredictions.length) return 0
+    return (correctPredictionsCount / resolvedPredictions.length) * 100
+  }, [correctPredictionsCount, resolvedPredictions])
 
   const avgProbA = useMemo(() => {
     if (!predictions.length) return 0
@@ -129,25 +169,52 @@ export default function ResultsPage() {
       [recentPredictions]
   )
 
-  const pieData = useMemo(() => {
-    const redFavoured = predictions.filter(
-        (pred) => (pred.probabilityA ?? 0) >= 0.5
-    ).length
-    const yellowFavoured = predictions.length - redFavoured
+  const weightClassAccuracyData = useMemo(() => {
+    const grouped = new Map<
+        number,
+        {
+          weightClassId: number
+          label: string
+          resolvedCount: number
+          correctCount: number
+          accuracy: number
+        }
+    >()
 
-    return [
-      {
-        name: "Red Corner Favoured",
-        value: redFavoured,
-        color: "oklch(0.58 0.22 25)",
-      },
-      {
-        name: "Yellow Corner Favoured",
-        value: yellowFavoured,
-        color: "oklch(0.78 0.15 80)",
-      },
-    ]
-  }, [predictions])
+    for (const pred of resolvedPredictions) {
+      if (pred.weightClassId == null) continue
+
+      const weightClassId = pred.weightClassId
+      const label = weightClassMap[weightClassId] ?? `Weight Class ${weightClassId}`
+
+      if (!grouped.has(weightClassId)) {
+        grouped.set(weightClassId, {
+          weightClassId,
+          label,
+          resolvedCount: 0,
+          correctCount: 0,
+          accuracy: 0,
+        })
+      }
+
+      const entry = grouped.get(weightClassId)!
+      entry.resolvedCount += 1
+
+      if (isCorrectPrediction(pred)) {
+        entry.correctCount += 1
+      }
+    }
+
+    return Array.from(grouped.values())
+        .map((entry) => ({
+          ...entry,
+          accuracy:
+              entry.resolvedCount === 0
+                  ? 0
+                  : Number(((entry.correctCount / entry.resolvedCount) * 100).toFixed(1)),
+        }))
+        .sort((a, b) => a.weightClassId - b.weightClassId)
+  }, [resolvedPredictions, weightClassMap])
 
   return (
       <div className="space-y-6">
@@ -229,12 +296,15 @@ export default function ResultsPage() {
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                        Red Corner Favoured
+                        Overall Accuracy
                       </p>
                       <p className="mt-2 font-display text-2xl font-bold text-foreground">
-                        {redFavouredCount}
-                        <span className="text-sm font-normal text-muted-foreground">
-                      /{predictions.length}
+                        {overallAccuracyRate.toFixed(1)}%
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {correctPredictionsCount}
+                        <span className="text-muted-foreground">
+                      /{resolvedPredictions.length} resolved
                     </span>
                       </p>
                     </div>
@@ -317,56 +387,79 @@ export default function ResultsPage() {
                 <div className="rounded-xl border border-border bg-card p-5">
                   <div className="mb-4">
                     <h3 className="text-sm font-semibold text-foreground">
-                      Favourite Distribution
+                      Accuracy by Weight Class
                     </h3>
                     <p className="text-xs text-muted-foreground">
-                      How often each corner was the predicted favourite
+                      Percentage of correct predictions by weight class, using only predictions with both actual winner and win method recorded.
                     </p>
                   </div>
 
-                  <div className="flex h-72 items-center justify-center">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                            data={pieData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={90}
-                            paddingAngle={4}
-                            dataKey="value"
-                            stroke="none"
-                        >
-                          {pieData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <RechartsTooltip
-                            contentStyle={{
-                              backgroundColor: "oklch(0.17 0.005 250)",
-                              border: "1px solid oklch(0.28 0.005 250)",
-                              borderRadius: "8px",
-                              color: "oklch(0.95 0 0)",
-                              fontSize: "12px",
-                            }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
+                  <div className="h-72">
+                    {weightClassAccuracyData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={weightClassAccuracyData}>
+                            <XAxis
+                                dataKey="label"
+                                tick={{ fill: "oklch(0.65 0 0)", fontSize: 9 }}
+                                axisLine={false}
+                                tickLine={false}
+                                interval={0}
+                                angle={-35}
+                                textAnchor="end"
+                                height={70}
+                            />
+                            <YAxis
+                                domain={[0, 100]}
+                                tick={{ fill: "oklch(0.65 0 0)", fontSize: 11 }}
+                                axisLine={false}
+                                tickLine={false}
+                                tickFormatter={(v) => `${v}%`}
+                            />
+                            <RechartsTooltip
+                                formatter={(value: number, _name, payload) => {
+                                  const entry = payload?.payload
+                                  return [
+                                    `${value}% (${entry?.correctCount ?? 0}/${entry?.resolvedCount ?? 0})`,
+                                    "Accuracy",
+                                  ]
+                                }}
+                                contentStyle={{
+                                  backgroundColor: "oklch(0.17 0.005 250)",
+                                  border: "1px solid oklch(0.28 0.005 250)",
+                                  borderRadius: "8px",
+                                  color: "oklch(0.95 0 0)",
+                                  fontSize: "12px",
+                                }}
+                            />
+                            <Bar dataKey="accuracy" radius={[4, 4, 0, 0]}>
+                              {weightClassAccuracyData.map((entry) => (
+                                  <Cell
+                                      key={entry.weightClassId}
+                                      fill={
+                                        entry.accuracy >= 70
+                                            ? "oklch(0.72 0.16 150)"
+                                            : entry.accuracy >= 50
+                                                ? "oklch(0.78 0.15 80)"
+                                                : "oklch(0.58 0.22 25)"
+                                      }
+                                  />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <div className="flex h-full items-center justify-center text-center text-sm text-muted-foreground">
+                          No resolved prediction history yet.
+                        </div>
+                    )}
                   </div>
 
-                  <div className="mt-2 flex justify-center gap-6">
-                    {pieData.map((item) => (
-                        <div key={item.name} className="flex items-center gap-2">
-                          <div
-                              className="size-2.5 rounded-full"
-                              style={{ backgroundColor: item.color }}
-                          />
-                          <span className="text-xs text-muted-foreground">
-                      {item.name} ({item.value})
-                    </span>
-                        </div>
-                    ))}
-                  </div>
+                  {weightClassAccuracyData.length > 0 && (
+                      <div className="mt-3 flex flex-wrap justify-center gap-4 text-xs text-muted-foreground">
+                        <span>Resolved predictions only</span>
+                        <span>Accuracy = correct / resolved</span>
+                      </div>
+                  )}
                 </div>
               </div>
 

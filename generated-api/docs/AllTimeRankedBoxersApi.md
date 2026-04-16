@@ -4,7 +4,7 @@ All URIs are relative to *https://backend-nexus-capstone.up.railway.app*
 
 | Method | HTTP request | Description |
 |------------- | ------------- | -------------|
-| [**generateProfile**](AllTimeRankedBoxersApi.md#generateprofile) | **POST** /api/v1/all-time-ranked-boxers/generate-profile | Generate boxer profile with AI |
+| [**generateBoxer**](AllTimeRankedBoxersApi.md#generateboxeroperation) | **POST** /api/v1/all-time-ranked-boxers/generate-boxer | Generate boxer with AI |
 | [**getActiveByWeightClassId1**](AllTimeRankedBoxersApi.md#getactivebyweightclassid1) | **GET** /api/v1/all-time-ranked-boxers/active/weight-class/{weightClassId} | Get active ranked boxers by weight class ID |
 | [**getAllActive**](AllTimeRankedBoxersApi.md#getallactive) | **GET** /api/v1/all-time-ranked-boxers/active | Get all active ranked boxers |
 | [**getAllWithBatchStatus**](AllTimeRankedBoxersApi.md#getallwithbatchstatus) | **GET** /api/v1/all-time-ranked-boxers/with-isActive | Get all ranked boxers with isActive status |
@@ -15,11 +15,11 @@ All URIs are relative to *https://backend-nexus-capstone.up.railway.app*
 
 
 
-## generateProfile
+## generateBoxer
 
-> GeneratedBoxerProfileResponse generateProfile(generateBoxerProfileRequest)
+> GeneratedBoxerResponse generateBoxer(generateBoxerRequest)
 
-Generate boxer profile with AI
+Generate boxer with AI
 
 Generates a boxer attribute profile for a boxer name and weight class using AI. Requires a valid Bearer JWT.
 
@@ -30,19 +30,19 @@ import {
   Configuration,
   AllTimeRankedBoxersApi,
 } from '';
-import type { GenerateProfileRequest } from '';
+import type { GenerateBoxerOperationRequest } from '';
 
 async function example() {
   console.log("🚀 Testing  SDK...");
   const api = new AllTimeRankedBoxersApi();
 
   const body = {
-    // GenerateBoxerProfileRequest
-    generateBoxerProfileRequest: ...,
-  } satisfies GenerateProfileRequest;
+    // GenerateBoxerRequest
+    generateBoxerRequest: ...,
+  } satisfies GenerateBoxerOperationRequest;
 
   try {
-    const data = await api.generateProfile(body);
+    const data = await api.generateBoxer(body);
     console.log(data);
   } catch (error) {
     console.error(error);
@@ -58,11 +58,11 @@ example().catch(console.error);
 
 | Name | Type | Description  | Notes |
 |------------- | ------------- | ------------- | -------------|
-| **generateBoxerProfileRequest** | [GenerateBoxerProfileRequest](GenerateBoxerProfileRequest.md) |  | |
+| **generateBoxerRequest** | [GenerateBoxerRequest](GenerateBoxerRequest.md) |  | |
 
 ### Return type
 
-[**GeneratedBoxerProfileResponse**](GeneratedBoxerProfileResponse.md)
+[**GeneratedBoxerResponse**](GeneratedBoxerResponse.md)
 
 ### Authorization
 
@@ -71,18 +71,18 @@ No authorization required
 ### HTTP request headers
 
 - **Content-Type**: `application/json`
-- **Accept**: `application/json`, `*/*`
+- **Accept**: `*/*`, `application/json`
 
 
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **401** | Authentication required |  -  |
+| **400** | Invalid request or validation failed |  -  |
+| **403** | Access denied |  -  |
 | **500** | Unexpected server error |  -  |
 | **200** | Boxer profile generated successfully |  -  |
-| **400** | Invalid request or validation failed |  -  |
+| **401** | Authentication required |  -  |
 | **404** | Boxer could not be confidently identified |  -  |
-| **403** | Access denied |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
@@ -149,8 +149,8 @@ No authorization required
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **404** | No active batch found for weight class |  -  |
 | **200** | Active ranked boxers retrieved successfully |  -  |
+| **404** | No active batch found for weight class |  -  |
 | **500** | Unexpected server error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
@@ -338,8 +338,8 @@ No authorization required
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 | **404** | Batch not found |  -  |
-| **200** | Ranked boxers retrieved successfully |  -  |
 | **500** | Unexpected server error |  -  |
+| **200** | Ranked boxers retrieved successfully |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
@@ -406,9 +406,9 @@ No authorization required
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
+| **404** | Ranked boxer not found |  -  |
 | **500** | Unexpected server error |  -  |
 | **200** | Ranked boxer found |  -  |
-| **404** | Ranked boxer not found |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
@@ -475,9 +475,9 @@ No authorization required
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **404** | Weight class not found |  -  |
-| **200** | Ranked boxers retrieved successfully |  -  |
 | **500** | Unexpected server error |  -  |
+| **200** | Ranked boxers retrieved successfully |  -  |
+| **404** | Weight class not found |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
@@ -545,18 +545,18 @@ example().catch(console.error);
 ### HTTP request headers
 
 - **Content-Type**: `application/json`
-- **Accept**: `application/json`, `*/*`
+- **Accept**: `*/*`, `application/json`
 
 
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **401** | Authentication required |  -  |
-| **200** | Ranked boxer updated successfully |  -  |
-| **500** | Unexpected server error |  -  |
 | **400** | Invalid request or validation failed |  -  |
-| **403** | Access denied |  -  |
 | **404** | Ranked boxer not found |  -  |
+| **403** | Access denied |  -  |
+| **500** | Unexpected server error |  -  |
+| **200** | Ranked boxer updated successfully |  -  |
+| **401** | Authentication required |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 

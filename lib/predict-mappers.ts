@@ -1,6 +1,6 @@
 import type {
     BoxerInput,
-    GeneratedBoxerProfileResponse,
+    GeneratedBoxerResponse,
     PredictionResponse,
 } from "@/generated-api/models"
 import type { BoxerAttributes } from "./predict-types"
@@ -20,8 +20,8 @@ export interface PredictionUIResult {
     explanation: string
 }
 
-export function mapGeneratedProfileToAttributes(
-    profile: GeneratedBoxerProfileResponse
+export function mapGeneratedBoxerToAttributes(
+    profile: GeneratedBoxerResponse
 ): BoxerAttributes {
     return {
         heightCm: profile.heightCm ?? 120,
@@ -59,50 +59,6 @@ export function mapGeneratedProfileToAttributes(
         strengthOfOpposition: profile.strengthOfOpposition ?? 5,
         recentFightActivity: profile.recentFightActivity ?? 5,
         performanceConsistency: profile.performanceConsistency ?? 5,
-    }
-}
-
-export function mapAttributesToBoxerInput(
-    name: string,
-    attrs: BoxerAttributes
-): BoxerInput {
-    return {
-        boxerName: name,
-        heightCm: attrs.heightCm,
-        reachCm: attrs.reachCm,
-
-        weightClassAlignment: attrs.weightClassAlignment,
-        handSpeed: attrs.handSpeed,
-        footSpeed: attrs.footSpeed,
-        strength: attrs.strength,
-        endurance: attrs.endurance,
-        reactionTime: attrs.reactionTime,
-        punchAccuracy: attrs.punchAccuracy,
-        punchVariety: attrs.punchVariety,
-        defensiveGuardEfficiency: attrs.defensiveGuardEfficiency,
-        headMovement: attrs.headMovement,
-        footworkTechnique: attrs.footworkTechnique,
-        counterpunchingAbility: attrs.counterpunchingAbility,
-        combinationEfficiency: attrs.combinationEfficiency,
-        ringIq: attrs.ringIq,
-        adaptabilityMidFight: attrs.adaptabilityMidFight,
-        distanceControl: attrs.distanceControl,
-        tempoControl: attrs.tempoControl,
-        opponentPatternRecognition: attrs.opponentPatternRecognition,
-        fightPlanningDiscipline: attrs.fightPlanningDiscipline,
-        composureUnderPressure: attrs.composureUnderPressure,
-        aggressionControl: attrs.aggressionControl,
-        mentalToughness: attrs.mentalToughness,
-        focusConsistency: attrs.focusConsistency,
-        resilienceAfterKnockdown: attrs.resilienceAfterKnockdown,
-
-        winRatio: attrs.winRatio,
-        knockoutRatio: attrs.knockoutRatio,
-
-        titleFightExperience: attrs.titleFightExperience,
-        strengthOfOpposition: attrs.strengthOfOpposition,
-        recentFightActivity: attrs.recentFightActivity,
-        performanceConsistency: attrs.performanceConsistency,
     }
 }
 

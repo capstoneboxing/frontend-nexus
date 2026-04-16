@@ -72,8 +72,8 @@ No authorization required
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **404** | Weight class not found |  -  |
 | **500** | Unexpected server error |  -  |
+| **404** | Weight class not found |  -  |
 | **200** | Weight class found |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
@@ -141,8 +141,8 @@ No authorization required
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **404** | Weight class not found |  -  |
 | **500** | Unexpected server error |  -  |
+| **404** | Weight class not found |  -  |
 | **200** | Weight class found |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)

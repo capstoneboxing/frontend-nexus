@@ -18,7 +18,7 @@ import type {
   ApiErrorResponse,
   PredictMatchRequest,
   PredictionResponse,
-} from '../models';
+} from '../models/index';
 import {
     ApiErrorResponseFromJSON,
     ApiErrorResponseToJSON,
@@ -26,7 +26,7 @@ import {
     PredictMatchRequestToJSON,
     PredictionResponseFromJSON,
     PredictionResponseToJSON,
-} from '../models';
+} from '../models/index';
 
 export interface PredictRequest {
     predictMatchRequest: PredictMatchRequest;

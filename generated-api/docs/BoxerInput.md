@@ -7,6 +7,7 @@
 Name | Type
 ------------ | -------------
 `boxerName` | string
+`attributeConfidence` | number
 `heightCm` | number
 `reachCm` | number
 `weightClassAlignment` | number
@@ -48,6 +49,7 @@ import type { BoxerInput } from ''
 // TODO: Update the object below with actual values
 const example = {
   "boxerName": null,
+  "attributeConfidence": null,
   "heightCm": null,
   "reachCm": null,
   "weightClassAlignment": null,

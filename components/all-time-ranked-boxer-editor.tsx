@@ -4,7 +4,7 @@ import { useMemo, useState } from "react"
 import { Lock, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { AttributeSlider } from "@/components/attribute-slider"
-import { allTimeRankedBoxersApi } from "@/lib/api-client"
+import { updateRankedBoxer } from "@/lib/api"
 import {
     mapAllTimeRankedBoxerToUI,
     mapFormValuesToAllTimeRankedBoxerUpdateRequest,
@@ -142,10 +142,7 @@ export function AllTimeRankedBoxerEditor({
 
             const payload = mapFormValuesToAllTimeRankedBoxerUpdateRequest(values)
 
-            const updated = await allTimeRankedBoxersApi.update({
-                id: boxer.rankedBoxerId,
-                allTimeRankedBoxerUpdateRequest: payload,
-            })
+            const updated = await updateRankedBoxer(boxer.rankedBoxerId, payload)
 
             onSaved(mapAllTimeRankedBoxerToUI(updated, weightClassName))
             appToast.success("Successfully updated all Time Ranked Boxer")

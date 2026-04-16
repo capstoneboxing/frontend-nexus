@@ -2,14 +2,20 @@
 
 import { useState } from "react"
 import {
-  ChevronDown,
-  Ruler,
-  Zap,
-  Crosshair,
   Brain,
+  ChevronDown,
+  Crosshair,
   Heart,
+  Loader2,
+  RefreshCcw,
+  Ruler,
+  Search,
+  ShieldCheck,
+  X,
+  Zap,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { AttributeSlider } from "@/components/attribute-slider"
 import {
   type BoxerAttributes,
@@ -25,6 +31,12 @@ interface BoxerInputCardProps {
   onNameChange: (name: string) => void
   attributes: BoxerAttributes
   onAttributeChange: (key: keyof BoxerAttributes, value: number) => void
+  confidence: number
+  onGenerate: () => void
+  onCancelGenerate: () => void
+  onResetAttributes: () => void
+  loadingGenerate?: boolean
+  disabledGenerate?: boolean
 }
 
 const categoryIcons = {
@@ -77,6 +89,12 @@ export function BoxerInputCard({
                                  onNameChange,
                                  attributes,
                                  onAttributeChange,
+                                 confidence,
+                                 onGenerate,
+                                 onCancelGenerate,
+                                 onResetAttributes,
+                                 loadingGenerate = false,
+                                 disabledGenerate = false,
                                }: BoxerInputCardProps) {
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
     physical: true,
@@ -85,6 +103,8 @@ export function BoxerInputCard({
   const toggleCategory = (key: string) => {
     setOpenCategories((prev) => ({ ...prev, [key]: !prev[key] }))
   }
+
+  const confidencePercent = `${(confidence * 100).toFixed(0)}%`
 
   return (
       <div className="rounded-xl border border-border bg-card">
@@ -120,6 +140,65 @@ export function BoxerInputCard({
                 placeholder="Enter boxer name"
                 className="border-border bg-secondary text-foreground placeholder:text-muted-foreground"
             />
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button
+                type="button"
+                onClick={onGenerate}
+                disabled={loadingGenerate || disabledGenerate}
+                className={
+                  color === "red"
+                      ? "border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors"
+                      : "border-yellow-400/30 bg-yellow-400/10 text-yellow-300 hover:bg-yellow-400/20 hover:text-yellow-200 transition-colors"
+                }
+            >
+              {loadingGenerate ? (
+                  <>
+                    <Loader2 className="mr-2 size-4 animate-spin" />
+                    Generating...
+                  </>
+              ) : (
+                  <>
+                    <Search className="mr-2 size-4" />
+                    Generate Boxer
+                  </>
+              )}
+            </Button>
+
+            {loadingGenerate && (
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onCancelGenerate}
+                    className="border-border"
+                >
+                  <X className="mr-2 size-4" />
+                  Cancel
+                </Button>
+            )}
+
+            <Button
+                type="button"
+                variant="outline"
+                onClick={onResetAttributes}
+                className="border-border"
+            >
+              <RefreshCcw className="mr-2 size-4" />
+              Reset Sliders
+            </Button>
+          </div>
+
+          <div className="rounded-lg border border-border bg-secondary/30 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="size-4 text-primary" />
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">
+              Current Confidence
+            </span>
+            </div>
+            <p className="mt-1 text-sm font-semibold text-foreground">
+              {confidencePercent}
+            </p>
           </div>
 
           <div className="space-y-2">

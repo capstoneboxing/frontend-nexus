@@ -61,16 +61,16 @@ This endpoint does not need any parameter.
 ### HTTP request headers
 
 - **Content-Type**: Not defined
-- **Accept**: `application/json`, `*/*`
+- **Accept**: `*/*`, `application/json`
 
 
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **401** | Authentication required |  -  |
 | **404** | Admin not found |  -  |
-| **500** | Unexpected server error |  -  |
 | **403** | Access denied |  -  |
+| **500** | Unexpected server error |  -  |
+| **401** | Authentication required |  -  |
 | **200** | Admin retrieved successfully |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
@@ -138,10 +138,10 @@ No authorization required
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **200** | Login successful |  -  |
-| **500** | Unexpected server error |  -  |
 | **400** | Invalid request or validation failed |  -  |
 | **401** | Invalid username or password |  -  |
+| **200** | Login successful |  -  |
+| **500** | Unexpected server error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 

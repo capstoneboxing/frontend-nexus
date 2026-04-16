@@ -17,13 +17,13 @@ import * as runtime from '../runtime';
 import type {
   ApiErrorResponse,
   WeightClassResponse,
-} from '../models';
+} from '../models/index';
 import {
     ApiErrorResponseFromJSON,
     ApiErrorResponseToJSON,
     WeightClassResponseFromJSON,
     WeightClassResponseToJSON,
-} from '../models';
+} from '../models/index';
 
 export interface GetWeightClassByIdRequest {
     id: number;

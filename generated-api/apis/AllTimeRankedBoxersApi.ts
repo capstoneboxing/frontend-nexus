@@ -20,9 +20,9 @@ import type {
   AllTimeRankedBoxerWithBatchStatusResponse,
   ApiErrorResponse,
   BoxerProfileLookupFailureResponse,
-  GenerateBoxerProfileRequest,
-  GeneratedBoxerProfileResponse,
-} from '../models';
+  GenerateBoxerRequest,
+  GeneratedBoxerResponse,
+} from '../models/index';
 import {
     AllTimeRankedBoxerResponseFromJSON,
     AllTimeRankedBoxerResponseToJSON,
@@ -34,14 +34,14 @@ import {
     ApiErrorResponseToJSON,
     BoxerProfileLookupFailureResponseFromJSON,
     BoxerProfileLookupFailureResponseToJSON,
-    GenerateBoxerProfileRequestFromJSON,
-    GenerateBoxerProfileRequestToJSON,
-    GeneratedBoxerProfileResponseFromJSON,
-    GeneratedBoxerProfileResponseToJSON,
-} from '../models';
+    GenerateBoxerRequestFromJSON,
+    GenerateBoxerRequestToJSON,
+    GeneratedBoxerResponseFromJSON,
+    GeneratedBoxerResponseToJSON,
+} from '../models/index';
 
-export interface GenerateProfileRequest {
-    generateBoxerProfileRequest: GenerateBoxerProfileRequest;
+export interface GenerateBoxerOperationRequest {
+    generateBoxerRequest: GenerateBoxerRequest;
 }
 
 export interface GetActiveByWeightClassId1Request {
@@ -71,13 +71,13 @@ export interface UpdateRequest {
 export class AllTimeRankedBoxersApi extends runtime.BaseAPI {
 
     /**
-     * Creates request options for generateProfile without sending the request
+     * Creates request options for generateBoxer without sending the request
      */
-    async generateProfileRequestOpts(requestParameters: GenerateProfileRequest): Promise<runtime.RequestOpts> {
-        if (requestParameters['generateBoxerProfileRequest'] == null) {
+    async generateBoxerRequestOpts(requestParameters: GenerateBoxerOperationRequest): Promise<runtime.RequestOpts> {
+        if (requestParameters['generateBoxerRequest'] == null) {
             throw new runtime.RequiredError(
-                'generateBoxerProfileRequest',
-                'Required parameter "generateBoxerProfileRequest" was null or undefined when calling generateProfile().'
+                'generateBoxerRequest',
+                'Required parameter "generateBoxerRequest" was null or undefined when calling generateBoxer().'
             );
         }
 
@@ -88,34 +88,34 @@ export class AllTimeRankedBoxersApi extends runtime.BaseAPI {
         headerParameters['Content-Type'] = 'application/json';
 
 
-        let urlPath = `/api/v1/all-time-ranked-boxers/generate-profile`;
+        let urlPath = `/api/v1/all-time-ranked-boxers/generate-boxer`;
 
         return {
             path: urlPath,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: GenerateBoxerProfileRequestToJSON(requestParameters['generateBoxerProfileRequest']),
+            body: GenerateBoxerRequestToJSON(requestParameters['generateBoxerRequest']),
         };
     }
 
     /**
      * Generates a boxer attribute profile for a boxer name and weight class using AI. Requires a valid Bearer JWT.
-     * Generate boxer profile with AI
+     * Generate boxer with AI
      */
-    async generateProfileRaw(requestParameters: GenerateProfileRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GeneratedBoxerProfileResponse>> {
-        const requestOptions = await this.generateProfileRequestOpts(requestParameters);
+    async generateBoxerRaw(requestParameters: GenerateBoxerOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<GeneratedBoxerResponse>> {
+        const requestOptions = await this.generateBoxerRequestOpts(requestParameters);
         const response = await this.request(requestOptions, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => GeneratedBoxerProfileResponseFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => GeneratedBoxerResponseFromJSON(jsonValue));
     }
 
     /**
      * Generates a boxer attribute profile for a boxer name and weight class using AI. Requires a valid Bearer JWT.
-     * Generate boxer profile with AI
+     * Generate boxer with AI
      */
-    async generateProfile(requestParameters: GenerateProfileRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GeneratedBoxerProfileResponse> {
-        const response = await this.generateProfileRaw(requestParameters, initOverrides);
+    async generateBoxer(requestParameters: GenerateBoxerOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GeneratedBoxerResponse> {
+        const response = await this.generateBoxerRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

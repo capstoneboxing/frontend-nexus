@@ -8,10 +8,15 @@ export type CategoryScoreBreakdown = {
     psychological?: number
 }
 
+export type ClosenessBreakdown = {
+    base?: number
+    adjusted?: number
+}
+
 export type BreakdownSnapshot = {
     closeness?: {
-        boxerA?: number
-        boxerB?: number
+        boxerA?: ClosenessBreakdown
+        boxerB?: ClosenessBreakdown
     }
     aiExplanation?: string
     overallScores?: {
@@ -27,6 +32,10 @@ export type BreakdownSnapshot = {
         boxerA?: CategoryScoreBreakdown
         boxerB?: CategoryScoreBreakdown
         perfectBoxer?: CategoryScoreBreakdown
+    }
+    attributeConfidence?: {
+        boxerA?: number
+        boxerB?: number
     }
     predictedWinner?: WinnerToken
 }

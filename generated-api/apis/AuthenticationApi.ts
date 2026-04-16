@@ -19,7 +19,7 @@ import type {
   ApiErrorResponse,
   AuthRequest,
   AuthResponse,
-} from '../models';
+} from '../models/index';
 import {
     AdminResponseFromJSON,
     AdminResponseToJSON,
@@ -29,7 +29,7 @@ import {
     AuthRequestToJSON,
     AuthResponseFromJSON,
     AuthResponseToJSON,
-} from '../models';
+} from '../models/index';
 
 export interface LoginRequest {
     authRequest: AuthRequest;

@@ -15,7 +15,11 @@ import {
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { perfectBoxersApi, weightClassesApi } from "@/lib/api-client"
+import { fetchAllActivePerfectBoxers,
+    fetchWeightClasses,
+    generatePerfectBoxer,
+    fetchPerfectBoxerBatchStatus,
+    recalculatePerfectBoxerByWeightClass } from "@/lib/api"
 import { isLoggedIn } from "@/lib/auth"
 import type {
     PerfectBoxerBatchStatusResponse,
@@ -188,8 +192,8 @@ export default function PerfectBoxerPage() {
             }
 
             const [perfectBoxers, weightClassesData] = await Promise.all([
-                perfectBoxersApi.getAllActivePerfectBoxers(),
-                weightClassesApi.getWeightClasses(),
+                fetchAllActivePerfectBoxers(),
+                fetchWeightClasses(),
             ])
 
             setWeightClasses(weightClassesData)
@@ -259,9 +263,7 @@ export default function PerfectBoxerPage() {
                 amount: generateAmount,
             }
 
-            const started = await perfectBoxersApi.generate({
-                perfectBoxerGenerationRequest: payload,
-            })
+            const started = await generatePerfectBoxer(payload)
 
             setGenerationStarted(started)
         } catch (err) {
@@ -279,9 +281,7 @@ export default function PerfectBoxerPage() {
             setCheckingBatchStatus(true)
             setError(null)
 
-            const status = await perfectBoxersApi.getBatchStatus({
-                batchId: generationStarted.batchId,
-            })
+            const status = await fetchPerfectBoxerBatchStatus(generationStarted.batchId)
 
             setBatchStatus(status)
 
@@ -303,9 +303,7 @@ export default function PerfectBoxerPage() {
             setRecalculatingWeightClassId(row.weightClassId)
             setError(null)
 
-            const updated = await perfectBoxersApi.recalculateByWeightClass({
-                weightClassId: row.weightClassId,
-            })
+            const updated = await recalculatePerfectBoxerByWeightClass(row.weightClassId)
 
             setRows((prev) =>
                 sortRowsByWeightClass(

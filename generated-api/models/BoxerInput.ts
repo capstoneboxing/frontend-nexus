@@ -30,6 +30,12 @@ export interface BoxerInput {
      * @type {number}
      * @memberof BoxerInput
      */
+    attributeConfidence: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof BoxerInput
+     */
     heightCm: number;
     /**
      * 
@@ -224,6 +230,7 @@ export interface BoxerInput {
  */
 export function instanceOfBoxerInput(value: object): value is BoxerInput {
     if (!('boxerName' in value) || value['boxerName'] === undefined) return false;
+    if (!('attributeConfidence' in value) || value['attributeConfidence'] === undefined) return false;
     if (!('heightCm' in value) || value['heightCm'] === undefined) return false;
     if (!('reachCm' in value) || value['reachCm'] === undefined) return false;
     if (!('weightClassAlignment' in value) || value['weightClassAlignment'] === undefined) return false;
@@ -270,6 +277,7 @@ export function BoxerInputFromJSONTyped(json: any, ignoreDiscriminator: boolean)
     return {
         
         'boxerName': json['boxerName'],
+        'attributeConfidence': json['attributeConfidence'],
         'heightCm': json['heightCm'],
         'reachCm': json['reachCm'],
         'weightClassAlignment': json['weightClassAlignment'],
@@ -317,6 +325,7 @@ export function BoxerInputToJSONTyped(value?: BoxerInput | null, ignoreDiscrimin
     return {
         
         'boxerName': value['boxerName'],
+        'attributeConfidence': value['attributeConfidence'],
         'heightCm': value['heightCm'],
         'reachCm': value['reachCm'],
         'weightClassAlignment': value['weightClassAlignment'],

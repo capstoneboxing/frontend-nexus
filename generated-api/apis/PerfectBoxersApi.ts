@@ -20,7 +20,7 @@ import type {
   PerfectBoxerGenerationRequest,
   PerfectBoxerGenerationStartedResponse,
   PerfectBoxerResponse,
-} from '../models';
+} from '../models/index';
 import {
     ApiErrorResponseFromJSON,
     ApiErrorResponseToJSON,
@@ -32,7 +32,7 @@ import {
     PerfectBoxerGenerationStartedResponseToJSON,
     PerfectBoxerResponseFromJSON,
     PerfectBoxerResponseToJSON,
-} from '../models';
+} from '../models/index';
 
 export interface GenerateRequest {
     perfectBoxerGenerationRequest: PerfectBoxerGenerationRequest;

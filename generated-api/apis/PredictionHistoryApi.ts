@@ -18,7 +18,7 @@ import type {
   ApiErrorResponse,
   PredictionHistoryResponse,
   PredictionResultUpdateRequest,
-} from '../models';
+} from '../models/index';
 import {
     ApiErrorResponseFromJSON,
     ApiErrorResponseToJSON,
@@ -26,7 +26,7 @@ import {
     PredictionHistoryResponseToJSON,
     PredictionResultUpdateRequestFromJSON,
     PredictionResultUpdateRequestToJSON,
-} from '../models';
+} from '../models/index';
 
 export interface DeletePredictionHistoryRequest {
     id: number;

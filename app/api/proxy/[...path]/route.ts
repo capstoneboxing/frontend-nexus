@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 
-const BACKEND = "https://backend-nexus-capstone.up.railway.app"
+const BACKEND = process.env.BACKEND_URL
+
+if (!BACKEND) {
+  throw new Error("BACKEND_URL is not defined in environment variables")
+}
 
 async function handler(req: NextRequest) {
   const url = req.nextUrl.pathname.replace("/api/proxy", "")

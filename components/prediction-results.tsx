@@ -52,7 +52,7 @@ export function PredictionResults({
                             : "border border-red-400/20 bg-red-400/5"
                     }`}
                 >
-                    <p className="text-xs text-muted-foreground">🔴 {result.boxerA.name}</p>
+                    <p className="text-xs text-muted-foreground">{result.boxerA.name}</p>
                     <p className="mt-1 font-display text-2xl font-bold text-red-400">
                         {result.boxerA.score}
                     </p>

@@ -1,18 +1,12 @@
 "use client"
 
 import React, { useEffect, useRef, useState } from "react"
-import { Loader2, Search, Swords, X } from "lucide-react"
+import { Loader2, Swords, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BoxerInputCard } from "@/components/boxer-input-card"
 import { PredictionResults } from "@/components/prediction-results"
 import {
-  allTimeRankedBoxersApi,
-  matchPredictionApi,
-  weightClassesApi,
-} from "@/lib/api-client"
-import {
-  mapGeneratedProfileToAttributes,
-  mapAttributesToBoxerInput,
+  mapGeneratedBoxerToAttributes,
   mapPredictionResponseToUI,
   type PredictionUIResult,
 } from "@/lib/predict-mappers"
@@ -20,11 +14,12 @@ import { defaultAttributes, type BoxerAttributes } from "@/lib/predict-types"
 import { ResponseError } from "@/generated-api/runtime"
 import type {
   BoxerProfileLookupFailureResponse,
-  GenerateBoxerProfileRequest,
-  GeneratedBoxerProfileResponse,
+  GenerateBoxerRequest,
+  GeneratedBoxerResponse,
   PredictMatchRequest,
   WeightClassResponse,
 } from "@/generated-api/models"
+import { fetchWeightClasses, generateBoxer, predictMatch } from "@/lib/api"
 
 export default function PredictPage() {
   const [weightClasses, setWeightClasses] = useState<WeightClassResponse[]>([])
@@ -40,10 +35,13 @@ export default function PredictPage() {
     ...defaultAttributes,
   })
 
+  const [boxerAConfidence, setBoxerAConfidence] = useState(1.0)
+  const [boxerBConfidence, setBoxerBConfidence] = useState(1.0)
+
   const [boxerAProfile, setBoxerAProfile] =
-      useState<GeneratedBoxerProfileResponse | null>(null)
+      useState<GeneratedBoxerResponse | null>(null)
   const [boxerBProfile, setBoxerBProfile] =
-      useState<GeneratedBoxerProfileResponse | null>(null)
+      useState<GeneratedBoxerResponse | null>(null)
 
   const [boxerAFailure, setBoxerAFailure] =
       useState<BoxerProfileLookupFailureResponse | null>(null)
@@ -59,11 +57,13 @@ export default function PredictPage() {
   const [error, setError] = useState("")
 
   const resultRef = useRef<HTMLDivElement | null>(null)
+  const boxerAAbortRef = useRef<AbortController | null>(null)
+  const boxerBAbortRef = useRef<AbortController | null>(null)
 
   async function loadWeightClasses() {
     try {
       setLoadingWeightClasses(true)
-      const data = await weightClassesApi.getWeightClasses()
+      const data = await fetchWeightClasses()
       setWeightClasses(data)
     } catch (err) {
       console.error(err)
@@ -77,16 +77,46 @@ export default function PredictPage() {
     void loadWeightClasses()
   }, [])
 
-  async function handleGenerateProfile(
-      boxerName: string,
+  function resetBoxerAttributes(
       setAttrs: React.Dispatch<React.SetStateAction<BoxerAttributes>>,
-      setProfile: React.Dispatch<
-          React.SetStateAction<GeneratedBoxerProfileResponse | null>
-      >,
+      setProfile: React.Dispatch<React.SetStateAction<GeneratedBoxerResponse | null>>,
       setFailure: React.Dispatch<
           React.SetStateAction<BoxerProfileLookupFailureResponse | null>
       >,
-      setLoading: React.Dispatch<React.SetStateAction<boolean>>
+      setConfidence: React.Dispatch<React.SetStateAction<number>>
+  ) {
+    setAttrs({ ...defaultAttributes })
+    setProfile(null)
+    setFailure(null)
+    setConfidence(1.0)
+  }
+
+  function handleManualAttributeChange(
+      key: keyof BoxerAttributes,
+      value: number,
+      setAttrs: React.Dispatch<React.SetStateAction<BoxerAttributes>>,
+      setProfile: React.Dispatch<React.SetStateAction<GeneratedBoxerResponse | null>>,
+      setFailure: React.Dispatch<
+          React.SetStateAction<BoxerProfileLookupFailureResponse | null>
+      >,
+      setConfidence: React.Dispatch<React.SetStateAction<number>>
+  ) {
+    setAttrs((prev) => ({ ...prev, [key]: value }))
+    setProfile(null)
+    setFailure(null)
+    setConfidence(1.0)
+  }
+
+  async function handleGenerateProfile(
+      boxerName: string,
+      setAttrs: React.Dispatch<React.SetStateAction<BoxerAttributes>>,
+      setProfile: React.Dispatch<React.SetStateAction<GeneratedBoxerResponse | null>>,
+      setFailure: React.Dispatch<
+          React.SetStateAction<BoxerProfileLookupFailureResponse | null>
+      >,
+      setLoading: React.Dispatch<React.SetStateAction<boolean>>,
+      setConfidence: React.Dispatch<React.SetStateAction<number>>,
+      abortRef: React.MutableRefObject<AbortController | null>
   ) {
     if (!boxerName.trim()) {
       setError("Please enter a boxer name first.")
@@ -103,15 +133,21 @@ export default function PredictPage() {
     setProfile(null)
     setFailure(null)
 
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
     try {
-      const payload: GenerateBoxerProfileRequest = {
+      const payload: GenerateBoxerRequest = {
         boxerName: boxerName.trim(),
         weightClassId: selectedWeightClassId,
       }
 
-      const response = await allTimeRankedBoxersApi.generateProfile({
-        generateBoxerProfileRequest: payload,
+      const response = await generateBoxer(payload, {
+        signal: controller.signal,
       })
+
+      if (controller.signal.aborted) return
 
       setProfile(response)
 
@@ -119,8 +155,13 @@ export default function PredictPage() {
         return
       }
 
-      setAttrs(mapGeneratedProfileToAttributes(response))
+      setAttrs(mapGeneratedBoxerToAttributes(response))
+      setConfidence(response.confidence ?? 1.0)
     } catch (err) {
+      if ((err as Error)?.name === "AbortError") {
+        return
+      }
+
       console.error(err)
 
       if (err instanceof ResponseError) {
@@ -128,7 +169,9 @@ export default function PredictPage() {
           const failure =
               (await err.response.json()) as BoxerProfileLookupFailureResponse
 
-          setFailure(failure)
+          if (!controller.signal.aborted) {
+            setFailure(failure)
+          }
         } catch {
           console.error("Failed to parse failure response")
         }
@@ -136,8 +179,20 @@ export default function PredictPage() {
         console.error(`Failed to generate profile for ${boxerName}.`)
       }
     } finally {
+      if (abortRef.current === controller) {
+        abortRef.current = null
+      }
       setLoading(false)
     }
+  }
+
+  function cancelGenerate(
+      abortRef: React.MutableRefObject<AbortController | null>,
+      setLoading: React.Dispatch<React.SetStateAction<boolean>>
+  ) {
+    abortRef.current?.abort()
+    abortRef.current = null
+    setLoading(false)
   }
 
   async function handlePredict() {
@@ -158,13 +213,19 @@ export default function PredictPage() {
     try {
       const payload: PredictMatchRequest = {
         weightClassId: selectedWeightClassId,
-        boxerA: mapAttributesToBoxerInput(boxerAName.trim(), boxerAAttrs),
-        boxerB: mapAttributesToBoxerInput(boxerBName.trim(), boxerBAttrs),
+        boxerA: {
+          boxerName: boxerAName.trim(),
+          attributeConfidence: boxerAConfidence,
+          ...boxerAAttrs,
+        },
+        boxerB: {
+          boxerName: boxerBName.trim(),
+          attributeConfidence: boxerBConfidence,
+          ...boxerBAttrs,
+        },
       }
 
-      const response = await matchPredictionApi.predict({
-        predictMatchRequest: payload,
-      })
+      const response = await predictMatch(payload)
 
       const mapped = mapPredictionResponseToUI(response)
       setResult(mapped)
@@ -195,7 +256,7 @@ export default function PredictPage() {
           </p>
         </div>
 
-        <div className="rounded-xl border p-4 space-y-3">
+        <div className="space-y-3 rounded-xl border p-4">
           <label className="text-sm font-medium">Weight Class</label>
 
           <div className="flex flex-col gap-3 sm:flex-row">
@@ -223,33 +284,6 @@ export default function PredictPage() {
 
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-3">
-            <Button
-                type="button"
-                onClick={() =>
-                    handleGenerateProfile(
-                        boxerAName,
-                        setBoxerAAttrs,
-                        setBoxerAProfile,
-                        setBoxerAFailure,
-                        setLoadingBoxerA
-                    )
-                }
-                disabled={loadingBoxerA || selectedWeightClassId === ""}
-                className="border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors"
-            >
-              {loadingBoxerA ? (
-                  <>
-                    <Loader2 className="mr-2 size-4 animate-spin" />
-                    Generating Boxer A...
-                  </>
-              ) : (
-                  <>
-                    <Search className="mr-2 size-4 text-red-400" />
-                    Generate Boxer A Profile
-                  </>
-              )}
-            </Button>
-
             <BoxerInputCard
                 label="Boxer A (Red Corner)"
                 color="red"
@@ -257,8 +291,38 @@ export default function PredictPage() {
                 onNameChange={setBoxerAName}
                 attributes={boxerAAttrs}
                 onAttributeChange={(key, value) =>
-                    setBoxerAAttrs((prev) => ({ ...prev, [key]: value }))
+                    handleManualAttributeChange(
+                        key,
+                        value,
+                        setBoxerAAttrs,
+                        setBoxerAProfile,
+                        setBoxerAFailure,
+                        setBoxerAConfidence
+                    )
                 }
+                confidence={boxerAConfidence}
+                onGenerate={() =>
+                    handleGenerateProfile(
+                        boxerAName,
+                        setBoxerAAttrs,
+                        setBoxerAProfile,
+                        setBoxerAFailure,
+                        setLoadingBoxerA,
+                        setBoxerAConfidence,
+                        boxerAAbortRef
+                    )
+                }
+                onCancelGenerate={() => cancelGenerate(boxerAAbortRef, setLoadingBoxerA)}
+                onResetAttributes={() =>
+                    resetBoxerAttributes(
+                        setBoxerAAttrs,
+                        setBoxerAProfile,
+                        setBoxerAFailure,
+                        setBoxerAConfidence
+                    )
+                }
+                loadingGenerate={loadingBoxerA}
+                disabledGenerate={selectedWeightClassId === ""}
             />
 
             {boxerAProfile && !boxerAFailure && (
@@ -307,33 +371,6 @@ export default function PredictPage() {
           </div>
 
           <div className="space-y-3">
-            <Button
-                type="button"
-                onClick={() =>
-                    handleGenerateProfile(
-                        boxerBName,
-                        setBoxerBAttrs,
-                        setBoxerBProfile,
-                        setBoxerBFailure,
-                        setLoadingBoxerB
-                    )
-                }
-                disabled={loadingBoxerB || selectedWeightClassId === ""}
-                className="border-yellow-400/30 bg-yellow-400/10 text-yellow-300 hover:bg-yellow-400/20 hover:text-yellow-200 transition-colors"
-            >
-              {loadingBoxerB ? (
-                  <>
-                    <Loader2 className="mr-2 size-4 animate-spin" />
-                    Generating Boxer B...
-                  </>
-              ) : (
-                  <>
-                    <Search className="mr-2 size-4 text-yellow-300" />
-                    Generate Boxer B Profile
-                  </>
-              )}
-            </Button>
-
             <BoxerInputCard
                 label="Boxer B (Yellow Corner)"
                 color="blue"
@@ -341,8 +378,38 @@ export default function PredictPage() {
                 onNameChange={setBoxerBName}
                 attributes={boxerBAttrs}
                 onAttributeChange={(key, value) =>
-                    setBoxerBAttrs((prev) => ({ ...prev, [key]: value }))
+                    handleManualAttributeChange(
+                        key,
+                        value,
+                        setBoxerBAttrs,
+                        setBoxerBProfile,
+                        setBoxerBFailure,
+                        setBoxerBConfidence
+                    )
                 }
+                confidence={boxerBConfidence}
+                onGenerate={() =>
+                    handleGenerateProfile(
+                        boxerBName,
+                        setBoxerBAttrs,
+                        setBoxerBProfile,
+                        setBoxerBFailure,
+                        setLoadingBoxerB,
+                        setBoxerBConfidence,
+                        boxerBAbortRef
+                    )
+                }
+                onCancelGenerate={() => cancelGenerate(boxerBAbortRef, setLoadingBoxerB)}
+                onResetAttributes={() =>
+                    resetBoxerAttributes(
+                        setBoxerBAttrs,
+                        setBoxerBProfile,
+                        setBoxerBFailure,
+                        setBoxerBConfidence
+                    )
+                }
+                loadingGenerate={loadingBoxerB}
+                disabledGenerate={selectedWeightClassId === ""}
             />
 
             {boxerBProfile && !boxerBFailure && (
