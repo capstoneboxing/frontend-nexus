@@ -427,8 +427,14 @@ export default function ResultsPage() {
                                   backgroundColor: "oklch(0.17 0.005 250)",
                                   border: "1px solid oklch(0.28 0.005 250)",
                                   borderRadius: "8px",
-                                  color: "oklch(0.95 0 0)",
+                                  color: "#fff",
                                   fontSize: "12px",
+                                }}
+                                labelStyle={{
+                                  color: "#fff",
+                                }}
+                                itemStyle={{
+                                  color: "#fff",
                                 }}
                             />
                             <Bar dataKey="accuracy" radius={[4, 4, 0, 0]}>

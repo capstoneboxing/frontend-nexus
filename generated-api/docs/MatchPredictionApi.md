@@ -1,6 +1,6 @@
 # MatchPredictionApi
 
-All URIs are relative to *https://backend-nexus-capstone.up.railway.app*
+All URIs are relative to *https://backend-nexus-lvnh.onrender.com*
 
 | Method | HTTP request | Description |
 |------------- | ------------- | -------------|
@@ -70,10 +70,10 @@ No authorization required
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **200** | Prediction generated successfully |  -  |
-| **400** | Invalid request or validation failed |  -  |
 | **403** | Access denied |  -  |
+| **400** | Invalid request or validation failed |  -  |
 | **404** | Required data not found (e.g., weight class or perfect boxer) |  -  |
+| **200** | Prediction generated successfully |  -  |
 | **401** | Authentication required |  -  |
 | **500** | Internal server error |  -  |
 

@@ -1,6 +1,6 @@
 # AllTimeRankedBoxersApi
 
-All URIs are relative to *https://backend-nexus-capstone.up.railway.app*
+All URIs are relative to *https://backend-nexus-lvnh.onrender.com*
 
 | Method | HTTP request | Description |
 |------------- | ------------- | -------------|
@@ -77,9 +77,9 @@ No authorization required
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
+| **500** | Unexpected server error |  -  |
 | **400** | Invalid request or validation failed |  -  |
 | **403** | Access denied |  -  |
-| **500** | Unexpected server error |  -  |
 | **200** | Boxer profile generated successfully |  -  |
 | **401** | Authentication required |  -  |
 | **404** | Boxer could not be confidently identified |  -  |
@@ -149,9 +149,9 @@ No authorization required
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **200** | Active ranked boxers retrieved successfully |  -  |
-| **404** | No active batch found for weight class |  -  |
 | **500** | Unexpected server error |  -  |
+| **404** | No active batch found for weight class |  -  |
+| **200** | Active ranked boxers retrieved successfully |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
@@ -210,8 +210,8 @@ No authorization required
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **200** | Active ranked boxers retrieved successfully |  -  |
 | **500** | Unexpected server error |  -  |
+| **200** | Active ranked boxers retrieved successfully |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
@@ -337,8 +337,8 @@ No authorization required
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **404** | Batch not found |  -  |
 | **500** | Unexpected server error |  -  |
+| **404** | Batch not found |  -  |
 | **200** | Ranked boxers retrieved successfully |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
@@ -406,8 +406,8 @@ No authorization required
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **404** | Ranked boxer not found |  -  |
 | **500** | Unexpected server error |  -  |
+| **404** | Ranked boxer not found |  -  |
 | **200** | Ranked boxer found |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
@@ -551,10 +551,10 @@ example().catch(console.error);
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
+| **500** | Unexpected server error |  -  |
 | **400** | Invalid request or validation failed |  -  |
 | **404** | Ranked boxer not found |  -  |
 | **403** | Access denied |  -  |
-| **500** | Unexpected server error |  -  |
 | **200** | Ranked boxer updated successfully |  -  |
 | **401** | Authentication required |  -  |
 

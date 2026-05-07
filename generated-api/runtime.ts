@@ -13,7 +13,7 @@
  */
 
 
-export const BASE_PATH = "https://backend-nexus-capstone.up.railway.app".replace(/\/+$/, "");
+export const BASE_PATH = "https://backend-nexus-lvnh.onrender.com".replace(/\/+$/, "");
 
 export interface ConfigurationParameters {
     basePath?: string; // override base path

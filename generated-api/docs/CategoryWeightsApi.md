@@ -1,6 +1,6 @@
 # CategoryWeightsApi
 
-All URIs are relative to *https://backend-nexus-capstone.up.railway.app*
+All URIs are relative to *https://backend-nexus-lvnh.onrender.com*
 
 | Method | HTTP request | Description |
 |------------- | ------------- | -------------|

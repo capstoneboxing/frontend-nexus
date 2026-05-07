@@ -36,6 +36,9 @@ interface PredictionHistoryRowProps {
     deletingId: number | null
     onToggleExpand: (id: number) => void
     getPredictedWinnerTextClass: (pred: PredictionHistoryUI) => string
+    getActualWinnerLabel: (pred: PredictionHistoryUI) => string
+    getActualWinnerTextClass: (pred: PredictionHistoryUI) => string
+    getDisplayStatus: (pred: PredictionHistoryUI) => "pending" | "correct" | "incorrect"
     getStatusBadgeClass: (pred: PredictionHistoryUI) => string
     getAllowedMethods: (winner: MatchWinnerToken) => MatchWinMethodToken[]
     isValidWinnerMethodCombo: (
@@ -61,6 +64,9 @@ export function PredictionHistoryRow({
                                          deletingId,
                                          onToggleExpand,
                                          getPredictedWinnerTextClass,
+                                         getActualWinnerLabel,
+                                         getActualWinnerTextClass,
+                                         getDisplayStatus,
                                          getStatusBadgeClass,
                                          getAllowedMethods,
                                          isValidWinnerMethodCombo,
@@ -106,15 +112,19 @@ export function PredictionHistoryRow({
             >
                 <td className="px-5 py-3.5 text-sm text-muted-foreground">
                     <div className="space-y-1">
-            <span className="flex items-center gap-1.5">
-              <Calendar className="size-3 shrink-0" />
-                {pred.predictionDateLabel}
-            </span>
                         <span className="flex items-center gap-1.5">
-              <Clock className="size-3 shrink-0" />
+                          <Calendar className="size-3 shrink-0" />
+                            {pred.predictionDateLabel}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <Clock className="size-3 shrink-0" />
                             {pred.predictionTimeLabel}
-            </span>
+                        </span>
                     </div>
+                </td>
+
+                <td className="px-5 py-3.5 text-sm font-medium text-foreground">
+                    {pred.weightClassName}
                 </td>
 
                 <td className="px-5 py-3.5">
@@ -136,15 +146,15 @@ export function PredictionHistoryRow({
                 </td>
 
                 <td className="hidden px-5 py-3.5 sm:table-cell">
-          <span className="font-display text-sm font-bold text-red-400">
-            {(pred.probabilityA * 100).toFixed(0)}%
-          </span>
+                  <span className="font-display text-sm font-bold text-red-400">
+                    {(pred.probabilityA * 100).toFixed(0)}%
+                  </span>
                 </td>
 
                 <td className="hidden px-5 py-3.5 md:table-cell">
-          <span className="font-display text-sm font-bold text-yellow-300">
-            {(pred.probabilityB * 100).toFixed(0)}%
-          </span>
+                  <span className="font-display text-sm font-bold text-yellow-300">
+                    {(pred.probabilityB * 100).toFixed(0)}%
+                  </span>
                 </td>
 
                 <td
@@ -155,14 +165,22 @@ export function PredictionHistoryRow({
                     {pred.predictedWinnerLabel}
                 </td>
 
+                <td
+                    className={`px-5 py-3.5 text-sm font-medium ${getActualWinnerTextClass(
+                        pred
+                    )}`}
+                >
+                    {getActualWinnerLabel(pred)}
+                </td>
+
                 <td className="px-5 py-3.5">
-          <span
-              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${getStatusBadgeClass(
-                  pred
-              )}`}
-          >
-            {pred.status}
-          </span>
+                  <span
+                      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${getStatusBadgeClass(
+                          pred
+                      )}`}
+                  >
+                    {getDisplayStatus(pred)}
+                  </span>
                 </td>
 
                 {loggedIn && (
@@ -188,8 +206,8 @@ export function PredictionHistoryRow({
                                     <AlertDialogDescription>
                                         Are you sure you want to delete{" "}
                                         <span className="font-semibold">
-                      {pred.boxerAName} vs {pred.boxerBName}
-                    </span>
+                                          {pred.boxerAName} vs {pred.boxerBName}
+                                        </span>
                                         ? This action cannot be undone.
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
@@ -213,7 +231,7 @@ export function PredictionHistoryRow({
 
             {isExpanded && (
                 <tr className="border-l-4 border-red-800">
-                    <td colSpan={loggedIn ? 7 : 6} className="px-5 py-4">
+                    <td colSpan={loggedIn ? 9 : 8} className="px-5 py-4">
                         <div className="space-y-5">
                             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                                 <div>
@@ -245,8 +263,12 @@ export function PredictionHistoryRow({
                                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
                                         Actual Result
                                     </p>
-                                    <p className="mt-0.5 text-sm font-medium text-foreground">
-                                        {pred.matchWinnerLabel ?? "Pending"}
+                                    <p
+                                        className={`mt-0.5 text-sm font-medium ${getActualWinnerTextClass(
+                                            pred
+                                        )}`}
+                                    >
+                                        {getActualWinnerLabel(pred)}
                                     </p>
                                     <p className="text-xs text-muted-foreground">
                                         {pred.matchWinMethod ?? "No method recorded"}

@@ -1,6 +1,6 @@
 # PredictionHistoryApi
 
-All URIs are relative to *https://backend-nexus-capstone.up.railway.app*
+All URIs are relative to *https://backend-nexus-lvnh.onrender.com*
 
 | Method | HTTP request | Description |
 |------------- | ------------- | -------------|
@@ -78,9 +78,9 @@ example().catch(console.error);
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 | **404** | Prediction history not found |  -  |
+| **500** | Unexpected server error |  -  |
 | **204** | Prediction history deleted successfully |  -  |
 | **403** | Access denied |  -  |
-| **500** | Unexpected server error |  -  |
 | **401** | Authentication required |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
@@ -134,14 +134,14 @@ No authorization required
 ### HTTP request headers
 
 - **Content-Type**: Not defined
-- **Accept**: `application/json`, `*/*`
+- **Accept**: `*/*`, `application/json`
 
 
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **403** | Access denied |  -  |
 | **500** | Unexpected server error |  -  |
+| **403** | Access denied |  -  |
 | **401** | Authentication required |  -  |
 | **200** | Prediction history retrieved successfully |  -  |
 
@@ -211,9 +211,9 @@ No authorization required
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 | **404** | Prediction history not found |  -  |
+| **500** | Unexpected server error |  -  |
 | **403** | Access denied |  -  |
 | **200** | Prediction history found |  -  |
-| **500** | Unexpected server error |  -  |
 | **401** | Authentication required |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
@@ -288,10 +288,10 @@ example().catch(console.error);
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **400** | Invalid request or validation failed |  -  |
 | **404** | Prediction history not found |  -  |
-| **403** | Access denied |  -  |
 | **500** | Unexpected server error |  -  |
+| **400** | Invalid request or validation failed |  -  |
+| **403** | Access denied |  -  |
 | **200** | Prediction history updated successfully |  -  |
 | **401** | Authentication required |  -  |
 

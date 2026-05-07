@@ -1,6 +1,6 @@
 # AuthenticationApi
 
-All URIs are relative to *https://backend-nexus-capstone.up.railway.app*
+All URIs are relative to *https://backend-nexus-lvnh.onrender.com*
 
 | Method | HTTP request | Description |
 |------------- | ------------- | -------------|
@@ -68,8 +68,8 @@ This endpoint does not need any parameter.
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 | **404** | Admin not found |  -  |
-| **403** | Access denied |  -  |
 | **500** | Unexpected server error |  -  |
+| **403** | Access denied |  -  |
 | **401** | Authentication required |  -  |
 | **200** | Admin retrieved successfully |  -  |
 
@@ -138,10 +138,10 @@ No authorization required
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **400** | Invalid request or validation failed |  -  |
-| **401** | Invalid username or password |  -  |
-| **200** | Login successful |  -  |
 | **500** | Unexpected server error |  -  |
+| **400** | Invalid request or validation failed |  -  |
+| **200** | Login successful |  -  |
+| **401** | Invalid username or password |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 

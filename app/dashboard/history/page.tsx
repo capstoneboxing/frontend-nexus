@@ -17,7 +17,6 @@ import { mapPredictionHistoryToUI } from "@/lib/history-mappers"
 import type { PredictionHistoryUI } from "@/lib/history-types"
 import type { PredictionResultUpdateRequest } from "@/generated-api/models"
 import { PredictionHistoryRow } from "@/components/prediction-history-row"
-
 type SortField = "predictionDate" | "probabilityA" | "probabilityB"
 type SortDir = "asc" | "desc"
 
@@ -61,20 +60,42 @@ function getPredictedWinnerTextClass(pred: PredictionHistoryUI): string {
   return "text-foreground"
 }
 
+function getActualWinnerLabel(pred: PredictionHistoryUI): string {
+  if (!pred.matchWinnerRaw) return "Pending"
+  if (pred.matchWinnerRaw === "BOXER_A") return pred.boxerAName
+  if (pred.matchWinnerRaw === "BOXER_B") return pred.boxerBName
+  if (pred.matchWinnerRaw === "DRAW") return "Draw"
+  return "Pending"
+}
+
+function getActualWinnerTextClass(pred: PredictionHistoryUI): string {
+  if (!pred.matchWinnerRaw) return "text-foreground"
+  if (pred.matchWinnerRaw === "BOXER_A") return "text-red-400"
+  if (pred.matchWinnerRaw === "BOXER_B") return "text-yellow-300"
+  if (pred.matchWinnerRaw === "DRAW") return "text-sky-300"
+  return "text-foreground"
+}
+
+function getDisplayStatus(pred: PredictionHistoryUI): "pending" | "correct" | "incorrect" {
+  if (!pred.matchWinnerRaw) return "pending"
+
+  return pred.predictedWinnerRaw === pred.matchWinnerRaw
+      ? "correct"
+      : "incorrect"
+}
+
 function getStatusBadgeClass(pred: PredictionHistoryUI): string {
-  if (pred.status === "correct") {
+  const status = getDisplayStatus(pred)
+
+  if (status === "correct") {
     return "bg-green-500/10 text-green-400 border border-green-500/20"
   }
 
-  if (pred.status === "draw") {
-    return "bg-sky-300/10 text-sky-300 border border-sky-300/20"
-  }
-
-  if (pred.status === "incorrect") {
+  if (status === "incorrect") {
     return "bg-destructive/10 text-destructive border border-destructive/20"
   }
 
-  return "bg-muted text-muted-foreground border border-border"
+  return "bg-muted text-foreground border border-border"
 }
 
 export default function HistoryPage() {
@@ -89,6 +110,7 @@ export default function HistoryPage() {
   const [sortField, setSortField] = useState<SortField>("predictionDate")
   const [sortDir, setSortDir] = useState<SortDir>("desc")
   const [expandedId, setExpandedId] = useState<number | null>(null)
+  const [selectedWeightClassId, setSelectedWeightClassId] = useState<string>("all")
 
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editMatchWinner, setEditMatchWinner] = useState<MatchWinnerToken>("")
@@ -138,31 +160,48 @@ export default function HistoryPage() {
     }
   }
 
+  const weightClassOptions = useMemo(() => {
+    return Object.entries(weightClassMap)
+        .map(([id, name]) => ({
+          id,
+          name,
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name))
+  }, [weightClassMap])
+
   useEffect(() => {
     void fetchAll()
   }, [])
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
-    const data = [...predictions]
+
+    const weightFiltered =
+        selectedWeightClassId === "all"
+            ? [...predictions]
+            : predictions.filter(
+                (p) => String(p.weightClassId) === selectedWeightClassId
+            )
 
     const searched = q
-        ? data.filter(
+        ? weightFiltered.filter(
             (p) =>
                 p.boxerAName.toLowerCase().includes(q) ||
                 p.boxerBName.toLowerCase().includes(q) ||
                 p.predictedWinnerLabel.toLowerCase().includes(q) ||
                 (p.matchWinnerLabel ?? "").toLowerCase().includes(q) ||
-                p.weightClassName.toLowerCase().includes(q)
+                getActualWinnerLabel(p).toLowerCase().includes(q) ||
+                getDisplayStatus(p).toLowerCase().includes(q)
         )
-        : data
+        : weightFiltered
 
     searched.sort((a, b) => {
       let cmp = 0
 
       if (sortField === "predictionDate") {
         cmp =
-            (a.predictionDate?.getTime() ?? 0) - (b.predictionDate?.getTime() ?? 0)
+            (a.predictionDate?.getTime() ?? 0) -
+            (b.predictionDate?.getTime() ?? 0)
       } else if (sortField === "probabilityA") {
         cmp = a.probabilityA - b.probabilityA
       } else if (sortField === "probabilityB") {
@@ -173,17 +212,25 @@ export default function HistoryPage() {
     })
 
     return searched
-  }, [predictions, search, sortField, sortDir])
+  }, [predictions, search, selectedWeightClassId, sortField, sortDir])
 
   const stats = useMemo(() => {
     const total = predictions.length
-    const correct = predictions.filter((p) => p.status === "correct").length
-    const incorrect = predictions.filter((p) => p.status === "incorrect").length
-    const draw = predictions.filter((p) => p.status === "draw").length
-    const resolved = predictions.filter((p) => p.status !== "pending").length
+
+    const correct = predictions.filter(
+        (p) => getDisplayStatus(p) === "correct"
+    ).length
+
+    const incorrect = predictions.filter(
+        (p) => getDisplayStatus(p) === "incorrect"
+    ).length
+
+
+    const resolved = correct + incorrect
+
     const accuracyRate = resolved === 0 ? 0 : (correct / resolved) * 100
 
-    return { total, correct, incorrect, draw, accuracyRate }
+    return { total, correct, incorrect, accuracyRate }
   }, [predictions])
 
   const toggleSort = (field: SortField) => {
@@ -317,7 +364,7 @@ export default function HistoryPage() {
           </p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-5">
+        <div className="grid gap-4 sm:grid-cols-4">
           <div className="rounded-xl border border-border bg-card p-4">
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Total Predictions
@@ -347,15 +394,6 @@ export default function HistoryPage() {
 
           <div className="rounded-xl border border-border bg-card p-4">
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Draw
-            </p>
-            <p className="mt-1 font-display text-2xl font-bold text-accent">
-              {loading ? "—" : stats.draw}
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Accuracy Rate
             </p>
             <p className="mt-1 font-display text-2xl font-bold text-foreground">
@@ -364,11 +402,25 @@ export default function HistoryPage() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="flex flex-col gap-3 lg:flex-row">
+          <select
+              value={selectedWeightClassId}
+              onChange={(e) => setSelectedWeightClassId(e.target.value)}
+              className="h-10 rounded-md border border-border bg-card px-3 text-sm text-foreground outline-none ring-offset-background focus:ring-2 focus:ring-ring lg:w-56"
+          >
+            <option value="all">All Weight Classes</option>
+
+            {weightClassOptions.map((wc) => (
+                <option key={wc.id} value={wc.id}>
+                  {wc.name}
+                </option>
+            ))}
+          </select>
+
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-                placeholder="Search by fighter, result, or weight class..."
+                placeholder="Search by fighter, prediction, result, or status..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="border-border bg-card pl-9 text-foreground placeholder:text-muted-foreground"
@@ -380,7 +432,7 @@ export default function HistoryPage() {
               variant="outline"
               onClick={() => void fetchAll(true)}
               disabled={loading || refreshing}
-              className="sm:w-auto"
+              className="lg:w-auto"
           >
             {refreshing ? (
                 <>
@@ -424,6 +476,10 @@ export default function HistoryPage() {
                     </th>
 
                     <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Weight Class
+                    </th>
+
+                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       Matchup
                     </th>
 
@@ -447,6 +503,10 @@ export default function HistoryPage() {
 
                     <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       Predicted Winner
+                    </th>
+
+                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Actual Winner
                     </th>
 
                     <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -477,6 +537,9 @@ export default function HistoryPage() {
                               setExpandedId(expandedId === id ? null : id)
                           }
                           getPredictedWinnerTextClass={getPredictedWinnerTextClass}
+                          getActualWinnerLabel={getActualWinnerLabel}
+                          getActualWinnerTextClass={getActualWinnerTextClass}
+                          getDisplayStatus={getDisplayStatus}
                           getStatusBadgeClass={getStatusBadgeClass}
                           getAllowedMethods={getAllowedMethods}
                           isValidWinnerMethodCombo={isValidWinnerMethodCombo}
