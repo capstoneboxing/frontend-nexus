@@ -22,8 +22,33 @@ export function getUser(): StoredUser | null {
   }
 }
 
+function isJwtExpired(token: string): boolean {
+  try {
+    const payloadBase64 = token.split(".")[1]
+
+    if (!payloadBase64) return true
+
+    const payload = JSON.parse(atob(payloadBase64))
+
+    if (!payload.exp) return true
+
+    return Date.now() >= payload.exp * 1000
+  } catch {
+    return true
+  }
+}
+
 export function isLoggedIn(): boolean {
-  return !!getToken()
+  const token = getToken()
+
+  if (!token) return false
+
+  if (isJwtExpired(token)) {
+    clearAuth()
+    return false
+  }
+
+  return true
 }
 
 export function saveAuth(token: string, username: string, adminId?: number) {
