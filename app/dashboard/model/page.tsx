@@ -282,16 +282,22 @@ Base closeness ranges from 0 to 1:
             <AccordionContent className="space-y-4 pb-5 text-sm text-muted-foreground whitespace-pre-line">
               <FormulaCard
                   title="Confidence-Adjusted Closeness"
-                  formula={`adjustedCloseness = 0.5 + confidence · (baseCloseness - 0.5)`}
+                  formula={`adjustedCloseness = baseCloseness - ((1 - confidence) · confidencePenaltyStrength · (baseCloseness - 0.5))`}
                   description={`Confidence is applied after base closeness is calculated.
 
 This means confidence does not change the fighter's raw category scores.
-Instead, it adjusts how strongly the system trusts the base closeness value.
+Instead, it slightly reduces certainty when confidence is lower.
+
+confidencePenaltyStrength controls how strongly confidence affects closeness.
 
 Examples:
 - confidence = 1.0 → no change
-- confidence = 0.0 → adjusted closeness becomes 0.5 (neutral)
-- lower confidence pulls the fighter closer to neutral uncertainty`}
+- confidence = 0.75 → small reduction
+- confidence = 0.50 → moderate reduction
+- lower confidence moves the fighter slightly toward neutral uncertainty
+
+The system uses:
+confidencePenaltyStrength = 0.35`}
               />
             </AccordionContent>
           </AccordionItem>
