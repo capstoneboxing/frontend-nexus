@@ -253,16 +253,13 @@ wᵢ = W_category / n`}
             <AccordionContent className="space-y-4 pb-5 text-sm text-muted-foreground whitespace-pre-line">
               <FormulaCard
                   title="Base Closeness Calculation"
-                  formula={`distance = |physical_f - physical_p|
-         + |technical_f - technical_p|
-         + |tactical_f - tactical_p|
-         + |psychological_f - psychological_p|
-         + |experience_f - experience_p|
+                  formula={`distance = | physicalᶠ - physicalₚ | + | technicalᶠ - technicalₚ | + | tacticalᶠ - tacticalₚ | + | psychologicalᶠ - psychologicalₚ | + | experienceᶠ - experienceₚ |
 
-baseCloseness = 1 - (distance / totalWeight)`}
+baseCloseness = 1 - distance`}
                   description={`The fighter is compared to the perfect boxer using category scores.
 
-totalWeight = physicalWeight + technicalWeight + tacticalWeight + psychologicalWeight + experienceWeight
+ᶠ represents the fighter's category score.
+ₚ represents the perfect boxer's category score.
 
 Base closeness ranges from 0 to 1:
 - 1 → identical to perfect boxer
